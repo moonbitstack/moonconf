@@ -1,0 +1,53 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf/hocon"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonconf",
+}
+
+// Values
+pub fn parse(StringView, knobs? : Knobs, source? : String) -> @moonconf.Node raise Refused
+
+pub let plain : Knobs
+
+// Errors
+pub(all) suberror Refused {
+  Unexpected(at~ : At, got~ : String)
+  Unclosed(at~ : At, got~ : String)
+  MissingValue(at~ : At, got~ : String)
+  Unresolved(path~ : String, at~ : At)
+  Cycle(path~ : String)
+  MissingInclude(name~ : String, at~ : At)
+  Concat(at~ : At, got~ : String)
+  TooDeep(at~ : At, limit~ : Int32)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Knobs {
+  read : (String) -> String?
+  fallback : (String) -> String?
+  depth : Int32
+}
+pub fn Knobs::with_fallback((String) -> String?) -> Self
+pub fn Knobs::with_read((String) -> String?) -> Self
+
+pub(all) struct Read {
+  read : (String) -> String?
+}
+
+// Type aliases
+
+// Traits

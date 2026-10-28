@@ -1,0 +1,72 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf/expand"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let deferred : Knobs
+
+pub let depth : Int32
+
+pub fn expand(StringView, Vars, knobs? : Knobs) -> String raise Refused
+
+pub let lenient : Knobs
+
+pub let strict : Knobs
+
+// Errors
+pub(all) suberror Refused {
+  Unclosed(at~ : At)
+  BadName(at~ : At, got~ : String)
+  BadOperator(at~ : At, got~ : String)
+  Undefined(name~ : String, at~ : At)
+  ReadOnly(name~ : String, at~ : At)
+  Required(name~ : String, why~ : String, at~ : At)
+  TooDeep(at~ : At, limit~ : Int32)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Knobs {
+  unset : Unset
+} derive(Eq, @debug.Debug)
+pub fn Knobs::equal(Self, Self) -> Bool
+pub fn Knobs::not_equal(Self, Self) -> Bool
+pub fn Knobs::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Unset {
+  Fail
+  Empty
+  Keep
+} derive(Eq, @debug.Debug)
+pub fn Unset::equal(Self, Self) -> Bool
+pub fn Unset::not_equal(Self, Self) -> Bool
+pub fn Unset::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Vars {
+  get : (String) -> String?
+  set : ((String, String) -> Unit)?
+}
+pub fn Vars::lookup(Self, String) -> String?
+pub fn Vars::none() -> Self
+pub fn Vars::of((String) -> String?) -> Self
+pub fn Vars::of_map(Map[String, String]) -> Self
+pub fn Vars::write(Self, String, String) -> Bool
+pub fn Vars::writing((String) -> String?, (String, String) -> Unit) -> Self
+
+// Type aliases
+
+// Traits

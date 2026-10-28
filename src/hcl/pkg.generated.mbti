@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf/hcl"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonconf",
+}
+
+// Values
+pub fn here_at(@moonconf.At) -> At
+
+pub let nowhere : At
+
+pub fn parse(StringView, context? : Context, source? : String) -> Body raise Refused
+
+pub fn parse_json(StringView, source? : String) -> Body raise Refused
+
+pub fn root_at(At) -> @moonconf.At
+
+pub fn standard() -> Context
+
+// Errors
+pub(all) suberror Refused {
+  Unexpected(at~ : At, got~ : String)
+  Unclosed(at~ : At, got~ : String)
+  BadBody(at~ : At, got~ : String)
+  UnknownName(name~ : String, at~ : At)
+  UnknownFunction(name~ : String, at~ : At)
+  BadArity(name~ : String, want~ : String, got~ : Int32, at~ : At)
+  BadOperation(why~ : String, at~ : At)
+  TooDeep(at~ : At, limit~ : Int32)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Block {
+  kind : String
+  labels : Array[String]
+  body : Body
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Block::equal(Self, Self) -> Bool
+pub fn Block::not_equal(Self, Self) -> Bool
+pub fn Block::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Body {
+  attributes : Array[(String, @moonconf.Node)]
+  blocks : Array[Block]
+} derive(Eq, @debug.Debug)
+pub fn Body::blocks_of(Self, String) -> Array[Block]
+pub fn Body::equal(Self, Self) -> Bool
+pub fn Body::get(Self, String) -> @moonconf.Node?
+pub fn Body::not_equal(Self, Self) -> Bool
+pub fn Body::to_repr(Self) -> @debug.Repr
+pub fn Body::tree(Self, String) -> @moonconf.Node
+
+pub(all) struct Context {
+  names : Map[String, @moonconf.Node]
+  functions : Map[String, (Array[@moonconf.Node]) -> @moonconf.Node raise Refused]
+}
+pub fn Context::bind(Self, String, @moonconf.Node) -> Self
+pub fn Context::function(Self, String, (Array[@moonconf.Node]) -> @moonconf.Node raise Refused) -> Self
+pub fn Context::new() -> Self
+
+// Type aliases
+
+// Traits

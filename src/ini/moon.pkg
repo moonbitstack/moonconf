@@ -1,0 +1,14 @@
+// INI: the file format with a section in brackets, a name, an `=` and a value,
+// and as many dialects as there are programs that read it.
+//
+// The switches follow the reader everyone compares against, Python's
+// `configparser`: `=` and `:` both separate, `#` and `;` comment, option names
+// fold to lower case, and a value may refer to another as `%(name)s` or
+// `${section:name}`.
+import {
+  "moonbitstack/moonconf",
+}
+
+import {
+  "moonbitstack/moonconf/ini",
+} for "test"

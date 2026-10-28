@@ -1,0 +1,13 @@
+// Java properties: the file format a `Properties` object has been writing since
+// 1996, and every `messages.properties` in every jar since.
+//
+// The grammar is `java.util.Properties`': `=` and `:` and whitespace all
+// separate, a backslash continues a line or escapes a character, and anything
+// outside printable ASCII is written `\uXXXX`.
+import {
+  "moonbitstack/moonconf",
+}
+
+import {
+  "moonbitstack/moonconf/props",
+} for "test"

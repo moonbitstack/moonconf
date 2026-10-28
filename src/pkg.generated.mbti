@@ -1,0 +1,183 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonmodel",
+}
+
+// Values
+pub fn bind(Node, @moonmodel.Model, known? : Array[@moonmodel.Model], knobs? : Bind) -> Json raise Refused
+
+pub let closed : Bind
+
+pub fn decimal(StringView) -> Double?
+
+pub let layered : Knobs
+
+pub fn merge(Array[Source], knobs? : Knobs) -> Node raise Refused
+
+pub fn native(Node) -> Json
+
+pub fn of_json(StringView, source? : String) -> Node raise Refused
+
+pub fn of_toml(StringView, source? : String) -> Node raise Refused
+
+pub fn of_yaml(StringView, source? : String) -> Node raise Refused
+
+pub let open : Bind
+
+pub fn segments(String) -> Array[String] raise Refused
+
+pub fn spot(String, At) -> String
+
+pub let start : At
+
+pub fn validate(Node, @moonmodel.Model, known? : Array[@moonmodel.Model], knobs? : Bind) -> Array[Refused]
+
+pub fn whole(StringView) -> Int64?
+
+// Errors
+pub(all) suberror Refused {
+  Type(want~ : String, got~ : String, path~ : String, source~ : String, at~ : At)
+  Missing(path~ : String, want~ : String)
+  Unknown(path~ : String, got~ : String)
+  Clash(path~ : String, first~ : String, second~ : String)
+  Path(got~ : String, at~ : Int32)
+  Format(why~ : String, at~ : At?)
+  TooDeep(at~ : At, limit~ : Int32)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::of(StringView, Int32) -> Self
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Bind {
+  extra : Extra
+} derive(Eq, @debug.Debug)
+pub fn Bind::equal(Self, Self) -> Bool
+pub fn Bind::not_equal(Self, Self) -> Bool
+pub fn Bind::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Clash {
+  Last
+  First
+  Refuse
+} derive(Eq, @debug.Debug)
+pub fn Clash::equal(Self, Self) -> Bool
+pub fn Clash::not_equal(Self, Self) -> Bool
+pub fn Clash::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Extra {
+  Allow
+  Refuse
+} derive(Eq, @debug.Debug)
+pub fn Extra::equal(Self, Self) -> Bool
+pub fn Extra::not_equal(Self, Self) -> Bool
+pub fn Extra::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Knobs {
+  order : Array[Tier]
+  clash : Clash
+} derive(Eq, @debug.Debug)
+pub fn Knobs::equal(Self, Self) -> Bool
+pub fn Knobs::not_equal(Self, Self) -> Bool
+pub fn Knobs::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Node {
+  value : Value
+  source : String
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Node::bool(Self) -> Bool raise Refused
+pub fn Node::copy(Self) -> Self
+pub fn Node::equal(Self, Self) -> Bool
+pub fn Node::find(Self, String) -> Self?
+pub fn Node::flag(Bool, String, at? : At) -> Self
+pub fn Node::from(Self, String, at? : At) -> Self
+pub fn Node::has(Self, String) -> Bool
+pub fn Node::int(Self) -> Int64 raise Refused
+pub fn Node::is_list(Self) -> Bool
+pub fn Node::is_map(Self) -> Bool
+pub fn Node::kind(Self) -> String
+pub fn Node::list(Self) -> Array[Self] raise Refused
+pub fn Node::map(Array[(String, Self)], String, at? : At) -> Self
+pub fn Node::merge(Self, Self, clash? : Clash, path? : String) -> Self raise Refused
+pub fn Node::need(Self, String) -> Self raise Refused
+pub fn Node::need_bool(Self, String) -> Bool raise Refused
+pub fn Node::need_int(Self, String) -> Int64 raise Refused
+pub fn Node::need_text(Self, String) -> String raise Refused
+pub fn Node::new(Value, String, At) -> Self
+pub fn Node::not_equal(Self, Self) -> Bool
+pub fn Node::num(Int64, String, at? : At) -> Self
+pub fn Node::of_real(Double, String, at? : At) -> Self
+pub fn Node::real(Self) -> Double raise Refused
+pub fn Node::seq(Array[Self], String, at? : At) -> Self
+pub fn Node::str(String, String, at? : At) -> Self
+pub fn Node::table(Self) -> Table raise Refused
+pub fn Node::text(Self) -> String raise Refused
+pub fn Node::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Source {
+  tier : Tier
+  name : String
+  node : Node
+} derive(Eq, @debug.Debug)
+pub fn Source::equal(Self, Self) -> Bool
+pub fn Source::new(Tier, String, Node) -> Self
+pub fn Source::not_equal(Self, Self) -> Bool
+pub fn Source::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Table {
+  entries : Array[(String, Node)]
+} derive(Eq, @debug.Debug)
+pub fn Table::copy(Self) -> Self
+pub fn Table::equal(Self, Self) -> Bool
+pub fn Table::get(Self, String) -> Node?
+pub fn Table::has(Self, String) -> Bool
+pub fn Table::is_empty(Self) -> Bool
+pub fn Table::items(Self) -> ArrayView[(String, Node)]
+pub fn Table::keys(Self) -> Array[String]
+pub fn Table::length(Self) -> Int32
+pub fn Table::new() -> Self
+pub fn Table::not_equal(Self, Self) -> Bool
+pub fn Table::remove(Self, String) -> Node?
+pub fn Table::set(Self, String, Node) -> Unit
+pub fn Table::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Tier {
+  Default
+  File
+  Env
+  Override
+} derive(Eq, @debug.Debug)
+pub fn Tier::equal(Self, Self) -> Bool
+pub fn Tier::not_equal(Self, Self) -> Bool
+pub fn Tier::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Value {
+  Null
+  Bool(Bool)
+  Int(Int64)
+  Real(Double)
+  Text(String)
+  List(Array[Node])
+  Map(Table)
+} derive(Eq, @debug.Debug)
+pub fn Value::equal(Self, Self) -> Bool
+pub fn Value::not_equal(Self, Self) -> Bool
+pub fn Value::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

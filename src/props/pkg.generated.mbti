@@ -1,0 +1,61 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf/props"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonconf",
+}
+
+// Values
+pub fn dumps(Doc, comment? : String) -> String
+
+pub fn load(BytesView) -> Doc raise Refused
+
+pub fn parse(StringView) -> Doc raise Refused
+
+// Errors
+pub(all) suberror Refused {
+  BadEscape(at~ : At, got~ : String)
+  BadByte(at~ : At, got~ : Int32)
+  Truncated(at~ : At)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Doc {
+  pairs : Array[Pair]
+} derive(Eq, @debug.Debug)
+pub fn Doc::equal(Self, Self) -> Bool
+pub fn Doc::get(Self, String) -> String?
+pub fn Doc::has(Self, String) -> Bool
+pub fn Doc::items(Self) -> Array[(String, String)]
+pub fn Doc::keys(Self) -> Array[String]
+pub fn Doc::new(Array[Pair]) -> Self
+pub fn Doc::not_equal(Self, Self) -> Bool
+pub fn Doc::to_repr(Self) -> @debug.Repr
+pub fn Doc::tree(Self, source? : String) -> @moonconf.Node
+
+pub(all) struct Pair {
+  key : String
+  value : String
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Pair::equal(Self, Self) -> Bool
+pub fn Pair::new(String, String, at? : At) -> Self
+pub fn Pair::not_equal(Self, Self) -> Bool
+pub fn Pair::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

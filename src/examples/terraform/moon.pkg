@@ -1,0 +1,7 @@
+// An HCL body with a reference, a call and a block: `moon run src/examples/terraform`.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonconf",
+  "moonbitstack/moonconf/hcl",
+}

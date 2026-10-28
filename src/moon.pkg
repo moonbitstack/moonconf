@@ -1,0 +1,23 @@
+// The tree every format reads into, the layers it is merged from, and the model
+// it is bound to.
+//
+// A configuration arrives as bytes from several places — a file someone wrote, a
+// file the deployment generated, the process environment, a flag — and what a
+// program wants is one answer per setting plus the ability to say where that
+// answer came from. This package is the tree that answer lives in, the merge that
+// produces it, and the binding that turns it into a typed value.
+//
+// Nothing here reads a file or the environment: those are I/O, and a library
+// that does I/O cannot be tested on four targets. The caller reads, this parses.
+import {
+  "moonbitlang/core/string",
+  "moonbitstack/moonjson",
+  "moonbitstack/moonmodel",
+  "moonbitstack/moontoml",
+  "moonbitstack/moonyaml",
+}
+
+import {
+  "moonbitlang/core/json",
+  "moonbitstack/moonmodel",
+} for "test"

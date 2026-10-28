@@ -1,0 +1,6 @@
+// A HOCON file with a reference and an include: `moon run src/examples/typesafe`.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonconf/hocon",
+}

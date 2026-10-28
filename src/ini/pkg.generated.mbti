@@ -1,0 +1,117 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf/ini"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonconf",
+}
+
+// Values
+pub let depth : Int32
+
+pub fn dumps(Doc) -> String
+
+pub let extended : Knobs
+
+pub let literal : Knobs
+
+pub fn parse(StringView, knobs? : Knobs) -> Doc raise Refused
+
+pub let standard : Knobs
+
+// Errors
+pub(all) suberror Refused {
+  MissingSection(at~ : At)
+  BadSection(at~ : At, got~ : String)
+  DuplicateSection(at~ : At, name~ : String)
+  DuplicateOption(at~ : At, name~ : String)
+  BadLine(at~ : At, got~ : String)
+  NoSection(section~ : String)
+  NoOption(section~ : String, option~ : String)
+  Interpolation(why~ : String, at~ : At)
+  TooDeep(at~ : At, limit~ : Int32)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Case {
+  Lower
+  Preserve
+  Upper
+} derive(Eq, @debug.Debug)
+pub fn Case::equal(Self, Self) -> Bool
+pub fn Case::not_equal(Self, Self) -> Bool
+pub fn Case::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Doc {
+  sections : Array[Section]
+  knobs : Knobs
+} derive(Eq, @debug.Debug)
+pub fn Doc::equal(Self, Self) -> Bool
+pub fn Doc::get(Self, String, String) -> String raise Refused
+pub fn Doc::get_or(Self, String, String, String) -> String raise Refused
+pub fn Doc::has_option(Self, String, String) -> Bool
+pub fn Doc::has_section(Self, String) -> Bool
+pub fn Doc::not_equal(Self, Self) -> Bool
+pub fn Doc::options(Self, String) -> Array[String] raise Refused
+pub fn Doc::raw(Self, String, String) -> String? raise Refused
+pub fn Doc::sections(Self) -> Array[String]
+pub fn Doc::to_repr(Self) -> @debug.Repr
+pub fn Doc::tree(Self, source? : String) -> @moonconf.Node raise Refused
+
+pub(all) struct Entry {
+  name : String
+  value : String
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Entry::equal(Self, Self) -> Bool
+pub fn Entry::not_equal(Self, Self) -> Bool
+pub fn Entry::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Interp {
+  None_
+  Basic
+  Extended
+} derive(Eq, @debug.Debug)
+pub fn Interp::equal(Self, Self) -> Bool
+pub fn Interp::not_equal(Self, Self) -> Bool
+pub fn Interp::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Knobs {
+  delimiters : String
+  comment : String
+  inline_comment : String
+  case : Case
+  strict : Bool
+  allow_no_value : Bool
+  empty_lines_in_values : Bool
+  interp : Interp
+  default_section : String
+} derive(Eq, @debug.Debug)
+pub fn Knobs::equal(Self, Self) -> Bool
+pub fn Knobs::not_equal(Self, Self) -> Bool
+pub fn Knobs::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Section {
+  name : String
+  options : Array[Entry]
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Section::equal(Self, Self) -> Bool
+pub fn Section::not_equal(Self, Self) -> Bool
+pub fn Section::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

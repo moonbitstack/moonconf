@@ -1,0 +1,13 @@
+// HCL 2: the language a Terraform file and a Nomad job are written in.
+//
+// Native syntax is a body of attributes and blocks, and an expression language
+// with references, calls and operators; the JSON syntax is the same body written
+// as objects. Expressions are evaluated as they are read, against a context the
+// caller fills with names and functions.
+import {
+  "moonbitstack/moonconf",
+}
+
+import {
+  "moonbitstack/moonconf/hcl",
+} for "test"

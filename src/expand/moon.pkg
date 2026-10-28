@@ -1,0 +1,9 @@
+// POSIX shell parameter expansion: the forms a `.env` file and an INI value use
+// when they say `${HOME}` or `${PORT:-8080}`.
+//
+// POSIX, section 2.6.2:
+// https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_02
+
+import {
+  "moonbitstack/moonconf/expand",
+} for "test"

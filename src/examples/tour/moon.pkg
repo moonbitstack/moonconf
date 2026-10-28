@@ -1,0 +1,10 @@
+// One configuration from four sources: `moon run src/examples/tour`.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonconf",
+  "moonbitstack/moonconf/dotenv",
+  "moonbitstack/moonconf/expand",
+  "moonbitstack/moonconf/ini",
+  "moonbitstack/moonmodel",
+}

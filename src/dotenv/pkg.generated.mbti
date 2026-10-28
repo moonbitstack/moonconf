@@ -1,0 +1,66 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonconf/dotenv"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonconf",
+  "moonbitstack/moonconf/expand",
+}
+
+// Values
+pub fn dumps(Array[Entry]) -> String
+
+pub let interpolated : Knobs
+
+pub let limit : Int32
+
+pub fn load(StringView, vars? : @expand.Vars, knobs? : Knobs, source? : String) -> Map[String, String] raise Refused
+
+pub fn parse(StringView, source? : String) -> Array[Entry] raise Refused
+
+pub fn tree(StringView, vars? : @expand.Vars, knobs? : Knobs, source? : String) -> @moonconf.Node raise Refused
+
+pub let verbatim : Knobs
+
+// Errors
+pub(all) suberror Refused {
+  Unclosed(at~ : At)
+  Trailing(at~ : At, got~ : String)
+  BadName(at~ : At, got~ : String)
+  Expand(why~ : String, at~ : At)
+  TooDeep(at~ : At, limit~ : Int32)
+}
+pub fn Refused::output(Self, &Logger) -> Unit
+pub fn Refused::to_string(Self) -> String
+pub impl Show for Refused
+
+// Types and methods
+pub(all) struct At {
+  at : Int32
+  line : Int32
+  column : Int32
+} derive(Eq, @debug.Debug)
+pub fn At::equal(Self, Self) -> Bool
+pub fn At::not_equal(Self, Self) -> Bool
+pub fn At::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Entry {
+  key : String
+  value : String
+  quoted : Bool
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Entry::equal(Self, Self) -> Bool
+pub fn Entry::not_equal(Self, Self) -> Bool
+pub fn Entry::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Knobs {
+  interpolate : Bool
+} derive(Eq, @debug.Debug)
+pub fn Knobs::equal(Self, Self) -> Bool
+pub fn Knobs::not_equal(Self, Self) -> Bool
+pub fn Knobs::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,15 @@
+// `.env`: the file a deployment keeps its secrets in, read as the shell would
+// read it.
+//
+// The format has no specification, so this reader follows what the shell does
+// with the same lines, and what every loader in the wild does with them:
+// `export` is a prefix, a quote decides whether the value is literal, and a
+// reference to an earlier entry is expanded.
+import {
+  "moonbitstack/moonconf",
+  "moonbitstack/moonconf/expand",
+}
+
+import {
+  "moonbitstack/moonconf/dotenv",
+} for "test"

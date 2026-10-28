@@ -5,8 +5,10 @@
 // HOCON file, an INI file and the environment merge into one answer.
 import {
   "moonbitstack/moonconf",
+  "moonbitlang/core/env",
 }
 
 import {
   "moonbitstack/moonconf/hocon",
+  "moonbitlang/core/env",
 } for "test"

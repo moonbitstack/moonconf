@@ -199,3 +199,26 @@ test "hocon: windows line endings read the same as unix ones" {
   assert_eq(doc.need_int("a"), 1L)
   assert_eq(doc.need_int("b.c"), 2L)
 }
+
+///|
+test "hocon: the environment answers a name the document does not define" {
+  @env.set_env_var("MOONCONF_ENV_PROBE", "from-env")
+  let doc = @hocon.parse("a = ${MOONCONF_ENV_PROBE}\n")
+  assert_eq(doc.need_text("a"), "from-env")
+  @env.unset_env_var("MOONCONF_ENV_PROBE")
+}
+
+///|
+test "hocon: a hermetic reading refuses a name only the environment knows" {
+  @env.set_env_var("MOONCONF_ENV_PROBE", "from-env")
+  let outcome = Ok(
+    @hocon.parse("a = ${MOONCONF_ENV_PROBE}\n", knobs=@hocon.plain),
+  ) catch {
+    error => Err(error)
+  }
+  @env.unset_env_var("MOONCONF_ENV_PROBE")
+  match outcome {
+    Err(@hocon.Unresolved(path~, ..)) => assert_eq(path, "MOONCONF_ENV_PROBE")
+    _ => fail("a hermetic reading should not see the environment")
+  }
+}

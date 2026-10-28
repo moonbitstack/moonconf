@@ -726,8 +726,9 @@ fn Parser::is_include(self : Parser) -> Bool {
 /// `include "name"`, `include required(file("name"))` and the other wrappers.
 ///
 /// Every wrapper ends at the same place: a name the caller is asked for. `url`
-/// and `classpath` are not fetched here because this package does no I/O; a
-/// caller that can fetch a URL answers the same function it answers for a file.
+/// and `classpath` are not fetched here, because reading a stream is I/O and this
+/// package does none; a caller that can fetch a URL answers the same function it
+/// answers for a file, and is told which wrapper was written.
 fn Parser::include_at(
   self : Parser,
   pairs : Array[(String, Item)],

@@ -7,23 +7,34 @@ pub(all) struct Knobs {
   /// Where an `include` reads from: the wrapper it was written with — `file`,
   /// `url` or `classpath` — and the name inside it. Answering nothing for a
   /// name makes the include optional, unless it was written `required(...)`.
-  /// Reading is the caller's job, because this package does no I/O.
+  /// Reading a file or a URL is the caller's job: this package does no I/O.
   read : (String, String) -> String?
-  /// Where a `${name}` that the document itself does not define is looked up:
-  /// the process environment, an overlay, a test fixture. Nothing by default,
-  /// because this package does no I/O.
+  /// Where a `${name}` that the document itself does not define is looked up.
+  /// The process environment by default; an overlay or a test fixture when the
+  /// caller says so.
   fallback : (String) -> String?
   /// The limit on nesting.
   depth : Int32
 }
 
 ///|
-/// A document that includes nothing and falls back to nothing.
+/// A document that includes nothing and falls back to nothing: what it says is
+/// all there is. For a test, or for a program that must not be moved by the
+/// machine it runs on.
 pub let plain : Knobs = {
   read: fn(_, _) { None },
   fallback: fn(_) { None },
   depth: 64,
 }
+
+///|
+/// The usual reading: the document, then the process environment.
+///
+/// A name the document does not define is looked up in the environment, which is
+/// how `path = ${HOME}/bin` works without the caller arranging anything. On a
+/// target with no environment the lookup answers nothing, so the same document
+/// reads the same way everywhere it can.
+pub let ambient : Knobs = { ..plain, fallback: @env.get_env_var, }
 
 ///|
 /// A document whose includes are read by `read`, whatever wrapper they used.
@@ -300,7 +311,7 @@ pub fn parse(
   knobs? : Knobs,
   source~ : String = "",
 ) -> @moonconf.Node raise Refused {
-  let knobs = knobs.unwrap_or(plain)
+  let knobs = knobs.unwrap_or(ambient)
   let parser : Parser = {
     src: text,
     read: knobs.read,

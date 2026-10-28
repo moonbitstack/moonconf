@@ -4,9 +4,12 @@ Configuration for MoonBit: the formats a deployment actually ships — INI, Java
 properties, `.env`, HOCON and HCL — read into one tree, layered in the order a
 program wants them, checked against a model, and bound to typed values.
 
-This package reads bytes and builds mappings. It does not open files, read the
-environment or fetch a URL: a caller reads its sources and hands them in, which
-is what makes every part of it testable on every target.
+This package reads bytes and builds mappings. It does not open files or fetch a
+URL: a caller reads its sources and hands them in, which is what makes every part
+of it testable on every target. The one exception is the process environment,
+which a HOCON document consults for a name it does not define — that is what the
+format means by a substitution, and it is a lookup rather than a read of a
+stream.
 
 ## The tree
 
@@ -83,7 +86,7 @@ test {
 | `moonconf/props` | Java properties, ISO-8859-1 and escapes | yes | — |
 | `moonconf/dotenv` | `.env` with quotes, escapes, continuation and references | yes | `interpolated`, `verbatim` |
 | `moonconf/expand` | POSIX parameter expansion | — | `strict`, `lenient`, `deferred` |
-| `moonconf/hocon` | JSON with relaxed punctuation, merging, references, includes | — | `plain`, `with_read`, `with_fallback` |
+| `moonconf/hocon` | JSON with relaxed punctuation, merging, references, includes | — | `ambient`, `plain`, `with_includes`, `with_fallback` |
 | `moonconf/hcl` | HCL 2 native and JSON syntax, evaluated against a context | — | `Context`, `standard` |
 
 ### INI
@@ -204,6 +207,9 @@ test {
   reading is I/O, and this package does none.
 - A value written twice may refer to itself: `a = 1` then `a = ${a} 2` is `1 2`,
   and `db = ${db} { port = 2 }` overrides one member of `db` and keeps the rest.
+- A name the document does not define is looked up in the process environment, so
+  `path = ${HOME}/bin` works without the caller arranging anything. `plain` reads
+  a document on its own, for a test or a machine-independent build.
 - A cycle that is not a definition building on itself is reported as one, rather
   than resolved into nonsense.
 
@@ -246,7 +252,9 @@ either side of a marker to take the whitespace around it away. `<<EOF` and
 built by a `for` expression, with an optional `if` filter, and `xs[*].name` asks
 the same question of every member.
 
-Not part of this reader: the `...` grouping form of an object `for`.
+A `for` over a list or a mapping builds either; `{for s in xs : s.team => s.name...}`
+gathers the values that share a key into a list, and without the `...` the last
+one written wins.
 
 ## Binding
 
@@ -349,7 +357,7 @@ db.port (env@1:1): want integer, got text
 |:--|:--|
 | `parse(text, knobs?, source?)` | Read a document into the shared tree |
 | `Knobs::with_read(read)` / `with_includes(from)` | Where an include comes from, with or without its wrapper |
-| `Knobs::with_fallback(lookup)` | Where an unresolved name is looked up |
+| `Knobs::with_fallback(lookup)` | Replace where an unresolved name is looked up |
 
 ### `moonconf/hcl`
 

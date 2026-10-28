@@ -3,3 +3,5 @@
 !.moonignore
 _*
 target/
+
+docs/assets/moonconf.js

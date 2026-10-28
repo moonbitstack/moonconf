@@ -1,0 +1,23 @@
+// Browser bridge: installs this library on `globalThis` for the site, so the
+// bench and the showcase run the packages compiled with the JavaScript backend
+// rather than a second implementation of the same idea.
+//
+//     moon build --target js --release src/examples/browser
+//
+// The page calls `globalThis.moonconf.assemble(request)` and friends; the build
+// product is not committed, the docs workflow makes it before publishing.
+pkgtype(kind: "executable")
+
+supported_targets = "js"
+
+import {
+  "moonbitstack/moonconf",
+  "moonbitstack/moonconf/dotenv",
+  "moonbitstack/moonconf/expand",
+  "moonbitstack/moonconf/hcl",
+  "moonbitstack/moonconf/hocon",
+  "moonbitstack/moonconf/ini",
+  "moonbitstack/moonconf/props",
+  "moonbitstack/moonmodel",
+  "moonbitlang/core/json",
+}

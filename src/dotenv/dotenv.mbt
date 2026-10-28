@@ -571,18 +571,50 @@ pub fn load(
 ///|
 /// The file as the shared tree: one mapping of names to values, resolved as
 /// [`load`] resolves them.
+///
+/// Each value keeps the line it was written on, so a refusal about a value can
+/// name the line of the file rather than the document as a whole.
 pub fn tree(
   text : StringView,
   vars? : Map[String, String],
   knobs? : Knobs,
   source~ : String = "",
 ) -> @moonconf.Node raise Refused {
-  let variables = load(text, vars?, knobs?, source~)
+  let knobs = knobs.unwrap_or(interpolated)
+  let doc = parse(text, source~)
+  let variables : Map[String, String] = Map([])
+  match vars {
+    Some(vars) =>
+      for pair in vars {
+        variables.set(pair.0, pair.1)
+      }
+    None => ()
+  }
   let table = @moonconf.Table::new()
-  for pair in variables {
-    table.set(pair.0, @moonconf.Node::str(pair.1, source))
+  for entry in doc.entries {
+    match entry.value {
+      None => ()
+      Some(raw) => {
+        let value = if knobs.interpolate {
+          resolve(raw, variables)
+        } else {
+          raw
+        }
+        variables.set(entry.key, value)
+        table.set(
+          entry.key,
+          @moonconf.Node::str(value, source, at=root_at(entry.at)),
+        )
+      }
+    }
   }
   @moonconf.Node::new(@moonconf.Value::Map(table), source, @moonconf.start)
+}
+
+///|
+/// A position of this package, in the terms the shared tree uses.
+fn root_at(at : At) -> @moonconf.At {
+  { at: at.at, line: at.line, column: at.column, }
 }
 
 ///|

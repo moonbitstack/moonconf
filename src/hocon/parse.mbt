@@ -24,13 +24,6 @@ priv struct Item {
 }
 
 ///|
-/// What an include asks the caller for.
-pub(all) struct Read {
-  /// The name written in the include: `"db.conf"` for `include "db.conf"`.
-  read : (String) -> String?
-}
-
-///|
 fn is_space(c : Int32) -> Bool {
   c == ' '.to_int() || c == '\t'.to_int() || c == '\f'.to_int()
 }

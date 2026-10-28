@@ -364,7 +364,7 @@ fn TParser::eval(
 ///|
 /// Expand the `${…}` and `%{…}` forms in `raw`, which is a string whose escapes
 /// have already been decoded.
-pub fn expand_template(
+fn expand_template(
   raw : String,
   ctx : Context,
   source : String,

@@ -396,7 +396,16 @@ fn escape(text : String, key : Bool) -> String {
 pub fn Doc::tree(self : Doc, source~ : String = "") -> @moonconf.Node {
   let table = @moonconf.Table::new()
   for pair in self.distinct() {
-    table.set(pair.key, @moonconf.Node::str(pair.value, source))
+    table.set(
+      pair.key,
+      @moonconf.Node::str(pair.value, source, at=root_at(pair.at)),
+    )
   }
   @moonconf.Node::new(@moonconf.Value::Map(table), source, @moonconf.start)
+}
+
+///|
+/// A position of this package, in the terms the shared tree uses.
+fn root_at(at : At) -> @moonconf.At {
+  { at: at.at, line: at.line, column: at.column, }
 }

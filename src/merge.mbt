@@ -35,14 +35,14 @@ pub(all) enum Clash {
 ///|
 /// How to merge: which tier is stronger, and what a disagreement means.
 ///
-/// `order` runs from the weakest tier to the strongest, and a tier left out of
-/// it sorts below every tier in it, in the order the sources were given. Putting
-/// the tiers in a different order is how a caller reverses the direction of the
-/// whole stack — an overlay read after the base file, say — without touching
-/// any parser.
+/// `wins` runs from the weakest tier to the strongest, and a tier left out of it
+/// sorts below every tier in it, in the order the sources were given. Putting the
+/// tiers in a different order is how a caller reverses the direction of the
+/// whole stack — an overlay read after the base file, say — without touching any
+/// parser.
 pub(all) struct Knobs {
-  /// Tiers from weakest to strongest.
-  order : Array[Tier]
+  /// Tiers from weakest to strongest: the last one wins.
+  wins : Array[Tier]
   /// What a disagreement means.
   clash : Clash
 } derive(Eq, Debug)
@@ -50,10 +50,7 @@ pub(all) struct Knobs {
 ///|
 /// Defaults below files below the environment below explicit overrides, with
 /// the stronger layer winning.
-pub let layered : Knobs = {
-  order: [Default, File, Env, Override],
-  clash: Last,
-}
+pub let layered : Knobs = { wins: [Default, File, Env, Override], clash: Last, }
 
 ///|
 /// One layer of a configuration: a tree, the tier it belongs to, and the name
@@ -77,8 +74,8 @@ pub fn Source::new(tier : Tier, name : String, node : Node) -> Source {
 /// The rank of a tier under `knobs`, lowest first.
 fn rank(tier : Tier, knobs : Knobs) -> Int32 {
   let mut i = 0
-  while i < knobs.order.length() {
-    if knobs.order[i] == tier {
+  while i < knobs.wins.length() {
+    if knobs.wins[i] == tier {
       return i
     }
     i += 1

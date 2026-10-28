@@ -47,10 +47,6 @@ pub fn Knobs::with_fallback((String) -> String?) -> Self
 pub fn Knobs::with_includes((String, String) -> String?) -> Self
 pub fn Knobs::with_read((String) -> String?) -> Self
 
-pub(all) struct Read {
-  read : (String) -> String?
-}
-
 // Type aliases
 
 // Traits

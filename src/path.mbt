@@ -91,20 +91,69 @@ pub fn Node::need(self : Node, path : String) -> Node raise Refused {
 
 ///|
 /// The text at `path`.
+///
+/// A value of another shape is refused with the path in the sentence, because a
+/// caller who asked for `db.port` wants to be told about `db.port` rather than
+/// about a position in a file.
 pub fn Node::need_text(self : Node, path : String) -> String raise Refused {
-  self.need(path).text()
+  let node = self.need(path)
+  match node.value {
+    Text(text) => text
+    _ =>
+      raise Type(
+        want="text",
+        got=node.kind(),
+        path~,
+        source=node.source,
+        at=node.at,
+      )
+  }
 }
 
 ///|
 /// The integer at `path`.
 pub fn Node::need_int(self : Node, path : String) -> Int64 raise Refused {
-  self.need(path).int()
+  let node = self.need(path)
+  match node.value {
+    Int(n) => n
+    Real(x) =>
+      if x == x.trunc() && x.abs() < 9.007199254740992e15 {
+        x.to_int64()
+      } else {
+        raise Type(
+          want="integer",
+          got="real",
+          path~,
+          source=node.source,
+          at=node.at,
+        )
+      }
+    _ =>
+      raise Type(
+        want="integer",
+        got=node.kind(),
+        path~,
+        source=node.source,
+        at=node.at,
+      )
+  }
 }
 
 ///|
 /// The boolean at `path`.
 pub fn Node::need_bool(self : Node, path : String) -> Bool raise Refused {
-  self.need(path).bool()
+  let node = self.need(path)
+  match node.value {
+    Bool(flag) => flag
+    _ =>
+      raise Type(
+        want="boolean",
+        got=node.kind(),
+        path~,
+        source=node.source,
+        at=node.at,
+      )
+  }
 }
 
 ///|

@@ -138,13 +138,13 @@ pub fn Context::function(
 
 ///|
 /// A position of this package, in the terms the shared tree uses.
-pub fn root_at(at : At) -> @moonconf.At {
+fn root_at(at : At) -> @moonconf.At {
   { at: at.at, line: at.line, column: at.column, }
 }
 
 ///|
 /// A position the shared tree carries, in this package's terms.
-pub fn here_at(at : @moonconf.At) -> At {
+fn here_at(at : @moonconf.At) -> At {
   { at: at.at, line: at.line, column: at.column, }
 }
 

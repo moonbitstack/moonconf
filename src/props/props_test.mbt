@@ -26,3 +26,10 @@ test "props: bytes are read as ISO-8859-1" {
   let doc = @props.load(b"A=caf\xe9\n")
   assert_eq(doc.get("A"), Some("caf\u{00E9}"))
 }
+
+///|
+test "props: the tree keeps the line each value was written on" {
+  let tree = @props.parse("a=1\nb=2\n").tree(source="app.properties")
+  assert_eq(tree.need("b").at.line, 2)
+  assert_eq(tree.need("b").source, "app.properties")
+}

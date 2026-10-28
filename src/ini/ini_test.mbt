@@ -152,3 +152,13 @@ test "ini: windows line endings read the same as unix ones" {
   let continued = @ini.parse("[db]\r\nq = one\r\n  two\r\n")
   assert_eq(continued.get("db", "q"), "one\ntwo")
 }
+
+///|
+test "ini: the tree keeps the line each value was written on" {
+  let tree = @ini.parse("[db]\nhost = localhost\nport = 5432\n").tree(
+    source="app.ini",
+  )
+  assert_eq(tree.need("db.host").at.line, 2)
+  assert_eq(tree.need("db.port").at.line, 3)
+  assert_eq(tree.need("db.host").source, "app.ini")
+}

@@ -7,20 +7,24 @@
 /// alphabetically is a different file, and a person diffing it sees noise
 /// instead of their change.
 pub(all) struct Table {
+  /// The members, in the order they were written.
   entries : Array[(String, Node)]
 } derive(Eq, Debug)
 
 ///|
+/// An empty mapping.
 pub fn Table::new() -> Table {
   { entries: [], }
 }
 
 ///|
+/// How many members the mapping has.
 pub fn Table::length(self : Table) -> Int32 {
   self.entries.length()
 }
 
 ///|
+/// Whether the mapping has no members.
 pub fn Table::is_empty(self : Table) -> Bool {
   self.entries.is_empty()
 }
@@ -129,6 +133,7 @@ pub(all) struct Node {
 } derive(Eq, Debug)
 
 ///|
+/// A node of any value, with the source it came from and where in it.
 pub fn Node::new(value : Value, source : String, at : At) -> Node {
   { value, source, at, }
 }

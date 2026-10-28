@@ -21,7 +21,7 @@ pub extend At with Debug::{to_repr}
 ///|
 /// The first position in a text: what a refusal about a whole document, rather
 /// than one character, points at.
-pub let nowhere : At = { at: 0, line: 1, column: 1, }
+let nowhere : At = { at: 0, line: 1, column: 1, }
 
 ///|
 /// Why an HCL text was refused.

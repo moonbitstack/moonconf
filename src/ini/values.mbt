@@ -312,16 +312,61 @@ pub fn Doc::tree(
   for name in self.sections() {
     let section = @moonconf.Table::new()
     for option in self.options(name) {
-      section.set(option, @moonconf.Node::str(self.get(name, option), source))
+      let at = match self.option_at(name, option) {
+        Some(at) => root_at(at)
+        None => @moonconf.start
+      }
+      section.set(
+        option,
+        @moonconf.Node::str(self.get(name, option), source, at~),
+      )
     }
     root.set(
       name,
       @moonconf.Node::new(
         @moonconf.Value::Map(section),
         source,
-        @moonconf.start,
+        match self.section_at(name) {
+          Some(at) => root_at(at)
+          None => @moonconf.start
+        },
       ),
     )
   }
   @moonconf.Node::new(@moonconf.Value::Map(root), source, @moonconf.start)
+}
+
+///|
+/// Where a section's header was written.
+fn Doc::section_at(self : Doc, name : String) -> At? {
+  for section in self.sections {
+    if section.name == name {
+      return Some(section.at)
+    }
+  }
+  None
+}
+
+///|
+/// Where an option was written: in its own section when it is written there,
+/// and in the defaults when it is inherited.
+fn Doc::option_at(self : Doc, section : String, name : String) -> At? {
+  for candidate in [section, self.knobs.default_section] {
+    for entry in self.sections {
+      if entry.name == candidate {
+        for option in entry.options {
+          if option.name == name {
+            return Some(option.at)
+          }
+        }
+      }
+    }
+  }
+  None
+}
+
+///|
+/// A position of this package, in the terms the shared tree uses.
+fn root_at(at : At) -> @moonconf.At {
+  { at: at.at, line: at.line, column: at.column, }
 }

@@ -60,12 +60,7 @@ test "merge: reversing the order lets the earlier layer win" {
   let base = map([("name", text("base", "base"))], "base")
   let patch = map([("name", text("patch", "patch"))], "patch")
   let reversed : @moonconf.Knobs = {
-    order: [
-      @moonconf.Override,
-      @moonconf.Env,
-      @moonconf.File,
-      @moonconf.Default,
-    ],
+    wins: [@moonconf.Override, @moonconf.Env, @moonconf.File, @moonconf.Default],
     clash: @moonconf.Last,
   }
   let merged = @moonconf.merge(
@@ -87,15 +82,15 @@ test "merge: a clash can keep the first, keep the last, or refuse both" {
     @moonconf.Source::new(@moonconf.File, "b", b),
   ]
   let both : @moonconf.Knobs = {
-    order: [@moonconf.File],
+    wins: [@moonconf.File],
     clash: @moonconf.Last,
   }
   let early : @moonconf.Knobs = {
-    order: [@moonconf.File],
+    wins: [@moonconf.File],
     clash: @moonconf.First,
   }
   let strict : @moonconf.Knobs = {
-    order: [@moonconf.File],
+    wins: [@moonconf.File],
     clash: @moonconf.Refuse,
   }
   let last = @moonconf.merge(sources, knobs=both)
@@ -139,7 +134,7 @@ test "merge: identical values from two layers are not a clash" {
   let a = map([("k", text("same", "a"))], "a")
   let b = map([("k", text("same", "b"))], "b")
   let strict : @moonconf.Knobs = {
-    order: [@moonconf.File],
+    wins: [@moonconf.File],
     clash: @moonconf.Refuse,
   }
   let merged = @moonconf.merge(
@@ -335,4 +330,17 @@ test "of_yaml and of_toml read the same tree" {
     @moonconf.native(yaml.need("db")).stringify(),
     @moonconf.native(toml.need("db")).stringify(),
   )
+}
+
+///|
+test "path: a mistyped value is refused with the path in the sentence" {
+  let tree = @moonconf.of_json("{\"db\":{\"port\":\"6432\"}}", source="env")
+  match (Ok(tree.need_int("db.port")) catch { error => Err(error) }) {
+    Err(Type(want~, got~, path~, ..)) => {
+      assert_eq(want, "integer")
+      assert_eq(got, "text")
+      assert_eq(path, "db.port")
+    }
+    _ => fail("text read as an integer should be refused")
+  }
 }

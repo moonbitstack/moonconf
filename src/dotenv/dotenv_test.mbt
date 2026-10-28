@@ -84,3 +84,10 @@ test "dotenv: windows line endings and a byte-order mark are not part of a name"
   assert_eq(doc.keys(), ["A", "B"])
   assert_eq(doc.get("A"), Some("1"))
 }
+
+///|
+test "dotenv: the tree keeps the line each value was written on" {
+  let tree = @dotenv.tree("A=1\nB=2\n", source=".env")
+  assert_eq(tree.need("B").at.line, 2)
+  assert_eq(tree.need("B").source, ".env")
+}

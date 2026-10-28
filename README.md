@@ -80,7 +80,7 @@ test {
 | Package | Reads | Writes | Knobs |
 |:--|:--|:--|:--|
 | `moonconf/ini` | sections, `=` or `:`, continuations, defaults, two interpolations | yes | `standard`, `extended`, `literal` |
-| `moonconf/props` | `java.util.Properties`, ISO-8859-1 and escapes | yes | — |
+| `moonconf/props` | Java properties, ISO-8859-1 and escapes | yes | — |
 | `moonconf/dotenv` | `.env` with quotes, escapes, continuation and references | yes | `interpolated`, `verbatim` |
 | `moonconf/expand` | POSIX parameter expansion | — | `strict`, `lenient`, `deferred` |
 | `moonconf/hocon` | JSON with relaxed punctuation, merging, references, includes | — | `plain`, `with_read`, `with_fallback` |
@@ -109,7 +109,7 @@ test {
 `doc.tree()` turns a document into the shared tree: one mapping per section, with
 the defaults folded in and the references resolved.
 
-### Java properties
+### Properties
 
 <!-- nocheck -->
 ```properties
@@ -125,8 +125,8 @@ test {
 }
 ```
 
-Names are names, not paths: `db.host` is one key. A file read as bytes is
-ISO-8859-1, as `load(InputStream)` is; `parse` takes text.
+Names are names, not paths: `db.host` is one key. `load` takes bytes as
+ISO-8859-1, one byte to one character; `parse` takes text.
 
 ### `.env`
 
@@ -223,7 +223,7 @@ inside it evaluates to. `@hcl.standard()` provides `upper`, `lower`, `trim`,
 is a block and the member names are its labels.
 
 `Body::tree()` turns a body into the shared tree: attributes under their names,
-and blocks under theirs, so a Terraform-shaped document merges like any other.
+and blocks under theirs, so a document of blocks merges like any other.
 
 Not part of this reader: template directives (`%{ if }`), heredocs, and `for`
 expressions.
@@ -245,7 +245,10 @@ test {
     ("host", @moonconf.Node::str("localhost", "app.ini")),
     ("port", @moonconf.Node::str("5432", "env")),
   ], "app.ini")
-  assert_eq(@moonconf.bind(tree, model).stringify(), "{\"host\":\"localhost\",\"pool\":4,\"port\":5432}")
+  assert_eq(
+    @moonconf.bind(tree, model),
+    @json.parse("{\"host\":\"localhost\",\"port\":5432,\"pool\":4}"),
+  )
 }
 ```
 

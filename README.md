@@ -1,8 +1,23 @@
-# moonconf
+<h1 align="center">moonconf</h1>
+
+<p align="center"><strong>Four sources. One reading.</strong></p>
+
+<p align="center">
+  <a href="https://moonbitstack.github.io/moonconf/">Home</a> ·
+  <a href="https://moonbitstack.github.io/moonconf/guide.html">Guide</a> ·
+  <a href="https://moonbitstack.github.io/moonconf/api.html">API</a> ·
+  <a href="https://mooncakes.io/docs/moonbitstack/moonconf">Mooncakes</a>
+</p>
+
+<p align="center">
+  <code>moon add moonbitstack/moonconf</code>
+</p>
 
 Configuration for MoonBit: the formats a deployment actually ships — INI, Java
 properties, `.env`, HOCON and HCL — read into one tree, layered in the order a
-program wants them, checked against a model, and bound to typed values.
+program wants them, checked against a model, and bound to typed values. Every
+value keeps the source and line it came from, so a refusal can say where the
+value was written.
 
 This package reads bytes and builds mappings. It does not open files or fetch a
 URL: a caller reads its sources and hands them in, which is what makes every part
@@ -69,9 +84,9 @@ test {
 }
 ```
 
-- The tiers run `Default`, `File`, `Env`, `Override`. The order is a field of
-  `Knobs`, so it can be reversed — a patch read *under* a document — without
-  touching a parser.
+- The tiers run `Default`, `File`, `Env`, `Override`. The `wins` field of
+  `Knobs` lists them weakest first, so the stack can be reversed — a patch read
+  *under* a document — without touching a parser.
 - Mappings merge member by member: a later file that sets one key under `db`
   keeps the rest of the earlier file's `db`. Lists replace, because a list is one
   decision.

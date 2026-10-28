@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guide — moonconf</title>
+    <meta
+      name="description"
+      content="A walk through moonconf: the tree, the five readers, expansion, merging, path lookups, binding to a model, and the switches that change what a file means."
+    />
+    <link rel="stylesheet" href="assets/style.css?v=1" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230e1012'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23e0a94a' stroke-width='4' stroke-dasharray='3 3'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23e0a94a'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("moonconf-theme");
+        } catch (error) {
+          theme = null;
+        }
+        if (!theme) {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="inner">
+        <a class="wordmark" href="index.html">
+          <svg class="gear" viewBox="0 0 32 32" aria-hidden="true">
+            <path fill="currentColor" fill-rule="evenodd" d="M26.20 16.00 L26.16 16.90 L29.07 17.82 L28.95 18.58 L28.77 19.34 L28.55 20.08 L25.70 19.15 L24.78 21.19 L24.25 22.00 L23.69 22.70 L25.51 25.16 L24.96 25.70 L24.37 26.21 L23.76 26.68 L22.00 24.25 L20.05 25.36 L19.15 25.70 L18.29 25.94 L18.31 29.00 L17.54 29.11 L16.77 29.18 L16.00 29.20 L16.00 26.20 L13.77 25.95 L12.85 25.70 L12.01 25.39 L10.23 27.87 L9.54 27.51 L8.88 27.12 L8.24 26.68 L10.00 24.25 L8.35 22.75 L7.75 22.00 L7.25 21.25 L4.35 22.21 L4.01 21.52 L3.71 20.81 L3.45 20.08 L6.30 19.15 L5.85 16.96 L5.80 16.00 L5.84 15.10 L2.93 14.18 L3.05 13.42 L3.23 12.66 L3.45 11.92 L6.30 12.85 L7.22 10.81 L7.75 10.00 L8.31 9.30 L6.49 6.84 L7.04 6.30 L7.63 5.79 L8.24 5.32 L10.00 7.75 L11.95 6.64 L12.85 6.30 L13.71 6.06 L13.69 3.00 L14.46 2.89 L15.23 2.82 L16.00 2.80 L16.00 5.80 L18.23 6.05 L19.15 6.30 L19.99 6.61 L21.77 4.13 L22.46 4.49 L23.12 4.88 L23.76 5.32 L22.00 7.75 L23.65 9.25 L24.25 10.00 L24.75 10.75 L27.65 9.79 L27.99 10.48 L28.29 11.19 L28.55 11.92 L25.70 12.85 L26.15 15.04 Z M16.00 12.00 A4 4 0 1 0 16.00 20.00 A4 4 0 1 0 16.00 12.00 Z" />
+          </svg>
+          <span class="name">moonconf</span>
+          <span class="dash" aria-hidden="true"></span>
+          <span class="kind">configuration</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="index.html">Home</a>
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="showcase.html">Showcase</a>
+          <a href="api.html">API</a>
+        </nav>
+        <div class="header-tools">
+          <button class="icon-button" type="button" data-theme-toggle aria-label="Switch theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+          <a
+            class="icon-button"
+            href="https://github.com/moonbitstack/moonconf"
+            aria-label="GitHub repository"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap">
+      <div class="docs-layout">
+        <aside class="docs-toc" aria-label="Contents">
+          <div class="title">Guide</div>
+          <a href="#install">1. Install</a>
+          <a href="#tree">2. The tree</a>
+          <a href="#read">3. Reading a file</a>
+          <a class="sub" href="#ini">INI</a>
+          <a class="sub" href="#props">Properties</a>
+          <a class="sub" href="#env">.env</a>
+          <a class="sub" href="#hocon">HOCON</a>
+          <a class="sub" href="#hcl">HCL</a>
+          <a class="sub" href="#serialised">JSON, YAML, TOML</a>
+          <a href="#expand">4. Expansion</a>
+          <a href="#merge">5. Merging</a>
+          <a href="#paths">6. Paths and refusals</a>
+          <a href="#bind">7. Binding</a>
+          <a href="#provenance">8. Provenance</a>
+          <a href="#run">9. A whole deployment</a>
+          <a href="#switches">10. The switches</a>
+        </aside>
+
+        <article class="docs-body">
+          <div class="section-head" style="margin-bottom: 28px">
+            <div>
+              <div class="kicker">Guide</div>
+              <h2 style="font-size: clamp(38px, 5vw, 56px)">From one key to a deployment.</h2>
+            </div>
+          </div>
+
+          <p class="lead">
+            This walks the library in the order a program uses it: text becomes a
+            tree, trees are layered, values are looked up, and a section becomes a
+            record. Every block below was compiled and run; the output under each
+            one is what it printed.
+          </p>
+
+          <h2 id="install">1. Install</h2>
+          <p>
+            Add the module, then import the package that reads the format you
+            have. The root package holds the tree, the merge and the binding; the
+            rest are readers.
+          </p>
+
+          <!-- nocheck -->
+          <div class="code-card">
+            <div class="bar"><span class="lang">console</span></div>
+            <pre><span class="cmd">$</span> moon add moonbitstack/moonconf</pre>
+          </div>
+
+          <p>
+            Nothing here opens a file. A caller reads bytes — from disk, a URL, the
+            environment — and hands the text in, which is why every part of this
+            runs on every target.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span><span class="file">main.mbt</span></div>
+            <pre data-lang="moonbit">let tree = @moonconf.of_json(
+  "{\"db\":{\"host\":\"localhost\"}}",
+  source="defaults",
+)
+println(tree.need_text("db.host"))   // localhost</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>localhost</pre>
+          </div>
+
+          <h2 id="tree">2. The tree</h2>
+          <p>
+            Every reader produces the same shape. A <code>Node</code> is a value,
+            the name of the source it came from, and the position in that source.
+            A value is null, a boolean, an integer, a real, text, a list, or a
+            mapping. A mapping keeps the order its members were written in.
+          </p>
+          <p>
+            A path is the member names joined by dots. <code>find</code> answers
+            nothing when the path is absent; <code>need</code> refuses.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let defaults = @moonconf.Node::map([
+  ("db", @moonconf.Node::map([
+    ("host", @moonconf.Node::str("localhost", "defaults")),
+    ("port", @moonconf.Node::num(5432, "defaults")),
+  ], "defaults")),
+], "defaults")
+
+println(defaults.need_text("db.host"))   // localhost
+println(defaults.need_int("db.port"))    // 5432
+println(defaults.has("db.tls"))          // false</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>localhost
+5432
+false</pre>
+          </div>
+
+          <p>
+            Builders exist for each value: <code>Node::str</code>,
+            <code>Node::num</code>, <code>Node::of_real</code>,
+            <code>Node::flag</code>, <code>Node::seq</code>,
+            <code>Node::map</code>. A node built by hand names its source too, so
+            a refusal about a default still says where the default came from.
+          </p>
+
+          <h2 id="read">3. Reading a file</h2>
+          <p>
+            Each reader has a <code>parse</code> that answers the document as
+            written, and most have a <code>tree</code> that answers the shared
+            tree. Use <code>parse</code> when the file's own shape matters — the
+            section order of an INI file, the lines of a <code>.env</code> — and
+            <code>tree</code> when it is one layer of a configuration.
+          </p>
+
+          <h3 id="ini">INI</h3>
+          <p>
+            Sections in brackets, <code>=</code> or <code>:</code> between a name
+            and a value, continuation lines indented under the line they continue,
+            and a <code>DEFAULT</code> section that every other section inherits.
+            The reader follows the dialect everybody compares against, and every
+            part of that dialect is a field of <code>Knobs</code> — see
+            <a href="#switches">the switches</a>.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let doc = @ini.parse("[db]\nhost = db.internal\npool = 8\n")
+let tree = doc.tree(source="app.ini")
+
+println(tree.need_text("db.host"))      // db.internal
+println(doc.get("db", "pool"))          // 8
+println(tree.need("db.host").at.line)   // 2</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>db.internal
+8
+2</pre>
+          </div>
+
+          <p>
+            The tree carries the line each value was written on, which is what a
+            refusal about that value will name.
+          </p>
+
+          <h3 id="props">Properties</h3>
+          <p>
+            The Java properties grammar: <code>=</code>, <code>:</code> and
+            whitespace all separate, a backslash continues a line or escapes a
+            character, and anything outside printable ASCII is written
+            <code>\uXXXX</code>. <code>load</code> takes bytes as ISO-8859-1, one
+            byte to one character, the way the original reader does;
+            <code>parse</code> takes text.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let doc = @props.parse("db.host=db.internal\ngreeting=hello\n")
+println(doc.get("greeting").unwrap())          // hello
+
+let bytes = @props.load(b"greeting=hello\n")   // ISO-8859-1
+println(bytes.get("greeting").unwrap())        // hello</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>hello
+hello</pre>
+          </div>
+
+          <h3 id="env">.env</h3>
+          <p>
+            An <code>export</code> prefix, comments, two kinds of quote, values
+            that span lines, and references to earlier entries. A line that is not
+            an assignment is kept in <code>Doc::skipped</code> rather than failing
+            the file: one bad line should not cost a deployment its configuration.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let env = @dotenv.load("HOST=db.internal\nDSN=postgres://${HOST}/app\n")
+println(env.get("DSN").unwrap())   // postgres://db.internal/app</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>postgres://db.internal/app</pre>
+          </div>
+
+          <h3 id="hocon">HOCON</h3>
+          <p>
+            JSON with the punctuation relaxed, plus the three things that make it
+            a configuration language: a repeated name merges its values, a
+            <code>${path}</code> is the value at that path, and
+            <code>include "file"</code> asks the caller for more text. A name the
+            document does not define is looked up in the process environment
+            unless the caller says otherwise with <code>plain</code>.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let doc = @hocon.parse(
+  "db { host = localhost }\n" +
+  "db.port = 5432\n" +
+  "url = \"${db.host}:${db.port}\"\n",
+)
+println(doc.need_text("url"))   // localhost:5432</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>localhost:5432</pre>
+          </div>
+
+          <h3 id="hcl">HCL</h3>
+          <p>
+            A body of attributes and blocks, and an expression language with
+            references, calls and operators. Expressions are evaluated as they are
+            read, against a context the caller fills with names and functions;
+            <code>standard()</code> has the string and list functions a
+            configuration file uses. Templates, heredocs, <code>for</code>
+            expressions and splats are part of the reader.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let body = @hcl.parse(
+  "server \"web\" {\n  port = 8080\n}\nname = upper(\"web\")\n",
+  context=@hcl.standard(),
+)
+println(body.blocks[0].body.get("port").unwrap().int())   // 8080
+println(body.get("name").unwrap().text())                 // WEB</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>8080
+WEB</pre>
+          </div>
+
+          <p>
+            <code>Body::tree</code> turns a body into the shared tree: attributes
+            under their names, blocks under theirs, so a document of blocks merges
+            like any other.
+          </p>
+
+          <h3 id="serialised">JSON, YAML, TOML</h3>
+          <p>
+            These arrive as trees directly, from the readers of the same
+            organisation. Use them when a source is already a serialisation rather
+            than a configuration dialect.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let from_json = @moonconf.of_json("{\"a\":1}")
+println(from_json.need_int("a"))   // 1</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>1</pre>
+          </div>
+
+          <h2 id="expand">4. Expansion</h2>
+          <p>
+            A <code>.env</code> file and an INI value use the shell's parameter
+            expansion. It also stands alone, for values written as a shell would
+            write them: <code>${A}</code>, <code>${A:-b}</code>,
+            <code>${A-b}</code>, <code>${A:=b}</code>, <code>${A:?msg}</code>,
+            <code>${A:+b}</code>, <code>${#A}</code>, nested, with escapes.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let vars = @expand.Vars::of_map(Map([("PORT", "8080")]))
+println(@expand.expand("http://localhost:${PORT:-80}/", vars))
+println(@expand.expand("${MISSING:-fallback}", vars))
+println(@expand.expand("${#PORT}", vars))</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>http://localhost:8080/
+fallback
+4</pre>
+          </div>
+
+          <p>
+            What an unset variable means is a policy, named:
+            <code>strict</code> refuses, <code>lenient</code> leaves the reference
+            as written, <code>deferred</code> answers nothing. The default is to
+            refuse, because a value that quietly becomes empty is a value nobody
+            notices is missing.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let vars = @expand.Vars::of_map(Map([("PORT", "8080")]))
+match (try Ok(@expand.expand("${MISSING}", vars)) catch {
+  e => Err(e)
+}) {
+  Err(e) => println(e)   // line 1: MISSING is not set
+  Ok(_) => println("expanded")
+}</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>line 1: MISSING is not set</pre>
+          </div>
+
+          <h2 id="merge">5. Merging</h2>
+          <p>
+            A source is a tree, the tier it belongs to, and a name for error
+            messages. Merge them and the tier decides which of two values wins:
+            defaults, then the file, then the environment, then an explicit
+            override. Mappings merge member by member. A list replaces: a list in
+            a configuration is one decision — which hosts, which plugins — and
+            appending two decisions gives a value nobody wrote.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let defaults = @hocon.parse(
+  "db {\n  host = localhost\n  port = 5432\n}\n",
+  source="defaults.conf",
+)
+let file = @ini.parse("[db]\nhost = db.internal\n").tree(source="app.ini")
+let env = @moonconf.Node::map([
+  ("db", @moonconf.Node::map([
+    ("port", @moonconf.Node::str("6432", "env")),
+  ], "env")),
+], "env")
+
+let sources = [
+  @moonconf.Source::new(@moonconf.File, "app.ini", file),
+  @moonconf.Source::new(@moonconf.Env, "env", env),
+  @moonconf.Source::new(@moonconf.Default, "defaults.conf", defaults),
+]
+let merged = @moonconf.merge(sources)
+println(merged.need_text("db.host"))   // db.internal
+println(merged.need_text("db.port"))   // 6432</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>db.internal
+6432</pre>
+          </div>
+
+          <p>
+            The sources were given in any order; <code>merge</code> sorted them by
+            tier. <code>clash</code> says what a disagreement means, and
+            <code>wins</code> is the tier order itself, so reversing the stack is
+            a change of knobs rather than of code.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let defaults = @hocon.parse(
+  "db {\n  host = localhost\n  port = 5432\n}\n",
+  source="defaults.conf",
+)
+let env = @moonconf.Node::map([
+  ("db", @moonconf.Node::map([
+    ("host", @moonconf.Node::str("db.internal", "env")),
+  ], "env")),
+], "env")
+let sources = [
+  @moonconf.Source::new(@moonconf.Default, "defaults.conf", defaults),
+  @moonconf.Source::new(@moonconf.Env, "env", env),
+]
+
+let strict : @moonconf.Knobs = {
+  wins: [@moonconf.Default, @moonconf.Env],
+  clash: @moonconf.Refuse,
+}
+match (try Ok(@moonconf.merge(sources, knobs=strict)) catch { e => Err(e) }) {
+  Err(e) => println(e)   // names both places
+  Ok(_) => println("merged")
+}
+
+let reversed : @moonconf.Knobs = {
+  wins: [@moonconf.Env, @moonconf.Default],
+  clash: @moonconf.Last,
+}
+println(@moonconf.merge(sources, knobs=reversed).need_text("db.host"))</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>db.host: written twice, at defaults.conf@2:10 and env@1:1
+localhost</pre>
+          </div>
+
+          <h2 id="paths">6. Paths and refusals</h2>
+          <p>
+            A lookup has three ways to fail, and they are three different
+            sentences: nothing is at the path, something is there but not in the
+            shape asked for, or the value exists and the field is not described.
+            Each sentence begins with the path, then the source and position.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let odd = @moonconf.of_json("{\"db\":{\"port\":\"6432\"}}", source="env")
+
+match (try Ok(odd.need_int("db.port")) catch { e =&gt; Err(e) }) {
+  Err(e) =&gt; println(e)   // want integer, got text
+  Ok(_) =&gt; println("read")
+}
+match (try Ok(odd.need("db.host")) catch { e =&gt; Err(e) }) {
+  Err(e) =&gt; println(e)   // nothing at the path
+  Ok(_) =&gt; println("found")
+}</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>db.port (env@1:1): want integer, got text
+db.host: want a value, got nothing</pre>
+          </div>
+
+          <h2 id="bind">7. Binding to a model</h2>
+          <p>
+            A model describes a section: the fields, which are required, what each
+            one is, and what it is when it was not written. Binding reads the
+            section through that description, and text is read as the type it
+            spells — which is what makes an environment variable, always text,
+            usable as a port number.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let model = @moonmodel.Model::new("Db", [
+  @moonmodel.Field::new("host", @moonmodel.Type::Text, required=true),
+  @moonmodel.Field::new("port", @moonmodel.Type::Int, required=true),
+  @moonmodel.Field::new("pool", @moonmodel.Type::Int, default=Json::number(4.0)),
+])
+let section = @moonconf.of_json(
+  "{\"host\":\"db.internal\",\"port\":\"6432\"}",
+  source="env",
+)
+println(@moonconf.bind(section, model).stringify())</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>{"host":"db.internal","port":6432,"pool":4}</pre>
+          </div>
+
+          <p>
+            <code>bind</code> stops at the first problem.
+            <code>validate</code> collects all of them, which is what a program
+            wants when it reports a bad configuration to whoever wrote it.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let model = @moonmodel.Model::new("Db", [
+  @moonmodel.Field::new("host", @moonmodel.Type::Text, required=true),
+  @moonmodel.Field::new("port", @moonmodel.Type::Int, required=true),
+])
+let broken = @moonconf.Node::map([
+  ("host", @moonconf.Node::str("h", "fixture")),
+  ("port", @moonconf.Node::str("http", "fixture")),
+], "fixture")
+
+for problem in @moonconf.validate(broken, model) {
+  println(problem)   // port (fixture@1:1): want integer, got text
+}</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>port (fixture@1:1): want integer, got text</pre>
+          </div>
+
+          <h2 id="provenance">8. Provenance</h2>
+          <p>
+            The merged tree is not a fresh value: each leaf is still the node a
+            reader produced, with its source name and position. After a merge, ask
+            a value where it came from.
+          </p>
+
+          <div class="code-card">
+            <div class="bar"><span class="lang">moonbit</span></div>
+            <pre data-lang="moonbit">let file = @ini.parse("[db]\nport = 5432\n").tree(source="app.ini")
+let env = @moonconf.of_json("{\"db\":{\"port\":6432}}", source="env")
+let merged = @moonconf.merge([
+  @moonconf.Source::new(@moonconf.File, "app.ini", file),
+  @moonconf.Source::new(@moonconf.Env, "env", env),
+])
+
+println(merged.need("db.port").source)    // env
+println(merged.need("db.port").at.line)   // 1</pre>
+          </div>
+          <div class="terminal">
+            <div class="bar"><span>output</span></div>
+            <pre>env
+1
+app.ini</pre>
+          </div>
+
+          <p>
+            A program that prints its own configuration at startup can therefore
+            print where each value came from, which turns “why is this port 6432?”
+            into a line of output.
+          </p>
+
+          <h2 id="run">9. A whole deployment</h2>
+          <p>
+            The tour example does the whole line in one file: defaults, an INI
+            file, an environment layer, a merge, a binding, and a
+            <code>.env</code> read with a reference in it.
+          </p>
+
+          <!-- nocheck -->
+          <div class="terminal">
+            <div class="bar"><span>terminal</span></div>
+            <pre><span class="cmd">$</span> moon run src/examples/tour
+host  -&gt; db.internal
+port  -&gt; 6432
+pool  -&gt; 8
+bound -&gt; {"host":"db.internal","port":6432,"pool":8}
+dsn   -&gt; postgres://db.internal/app
+url   -&gt; http://localhost:8080/</pre>
+          </div>
+
+          <p>
+            The file is <code>src/examples/tour/main.mbt</code>. Two more examples
+            cover HOCON and HCL on their own:
+            <code>src/examples/typesafe</code> and
+            <code>src/examples/terraform</code>.
+          </p>
+
+          <h2 id="switches">10. The switches</h2>
+          <p>
+            A format is a set of decisions, and each decision here is a named
+            field or a preset. The presets are the usual answers; a field is for
+            the file that disagrees with them.
+          </p>
+
+          <table class="spec">
+            <caption>What can be changed</caption>
+            <thead>
+              <tr><th>Package</th><th>Switch</th><th>Values</th></tr>
+            </thead>
+            <tbody>
+              <tr><td rowspan="5"><code>ini</code></td><td><code>delimiters</code></td><td>The characters that separate a name from a value.</td></tr>
+              <tr><td><code>comment</code> · <code>inline_comment</code></td><td>What starts a comment, whole-line and after a value.</td></tr>
+              <tr><td><code>case</code></td><td><code>Lower</code>, <code>Preserve</code>, <code>Upper</code>.</td></tr>
+              <tr><td><code>strict</code> · <code>allow_no_value</code> · <code>empty_lines_in_values</code></td><td>Whether a duplicate, a bare name, or a blank line is allowed.</td></tr>
+              <tr><td><code>interp</code></td><td><code>None_</code>, <code>Basic</code> (<code>%(name)s</code>), <code>Extended</code> (<code>${section:name}</code>).</td></tr>
+              <tr><td rowspan="2"><code>expand</code></td><td><code>unset</code></td><td><code>Fail</code>, <code>Empty</code>, <code>Keep</code>.</td></tr>
+              <tr><td>presets</td><td><code>strict</code>, <code>lenient</code>, <code>deferred</code>.</td></tr>
+              <tr><td><code>dotenv</code></td><td><code>interpolate</code></td><td>Whether `${…}` is resolved; presets <code>interpolated</code> and <code>verbatim</code>.</td></tr>
+              <tr><td><code>hocon</code></td><td><code>read</code> · <code>fallback</code> · <code>depth</code></td><td>Where an include comes from, where an unknown name is looked up, how deep nesting may go.</td></tr>
+              <tr><td><code>merge</code></td><td><code>wins</code> · <code>clash</code></td><td>The tier order, and <code>Last</code>, <code>First</code>, <code>Refuse</code>.</td></tr>
+              <tr><td><code>bind</code></td><td><code>extra</code></td><td><code>Allow</code> or <code>Refuse</code> a member the model does not describe.</td></tr>
+            </tbody>
+          </table>
+
+          <div class="note">
+            <strong>Presets are values, not shortcuts.</strong> <code>@ini.standard</code>,
+            <code>@expand.lenient</code> and <code>@moonconf.layered</code> are
+            records you can copy and change one field of:
+            <code>{ ..@ini.standard, delimiters: "=" }</code>.
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="inner">
+        <span>moonconf — configuration for MoonBit, read once and layered. Apache-2.0.</span>
+        <div class="links">
+          <a href="guide.html">Guide</a>
+          <a href="showcase.html">Showcase</a>
+          <a href="api.html">API</a>
+          <a href="https://mooncakes.io/docs/moonbitstack/moonconf">Mooncakes</a>
+          <a href="https://github.com/moonbitstack/moonconf">GitHub</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="assets/app.js?v=1"></script>
+  </body>
+</html>

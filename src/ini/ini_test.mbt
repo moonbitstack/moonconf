@@ -143,3 +143,12 @@ test "ini: the tree folds the defaults into every section" {
   assert_eq(tree.need_text("db.port"), "1")
   assert_eq(tree.find("DEFAULT"), None)
 }
+
+///|
+test "ini: windows line endings read the same as unix ones" {
+  let doc = @ini.parse("[db]\r\nhost = localhost\r\nport = 5432\r\n")
+  assert_eq(doc.get("db", "host"), "localhost")
+  assert_eq(doc.get("db", "port"), "5432")
+  let continued = @ini.parse("[db]\r\nq = one\r\n  two\r\n")
+  assert_eq(continued.get("db", "q"), "one\ntwo")
+}

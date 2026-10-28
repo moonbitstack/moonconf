@@ -108,3 +108,38 @@ test "ini: the defaults are found through every section" {
   assert_eq(doc.get("db", "port"), "2")
   assert_eq(doc.options("db"), ["port", "host"])
 }
+
+///|
+test "ini: the dialect switches say what a file means" {
+  // A file that separates only with `=`, comments with `%`, and calls its
+  // defaults `COMMON`.
+  let knobs : @ini.Knobs = {
+    ..@ini.standard,
+    delimiters: "=",
+    comment: "%",
+    default_section: "COMMON",
+  }
+  let doc = @ini.parse(
+    "% a note\n[COMMON]\nhost = base\n[db]\nport = 1\n",
+    knobs~,
+  )
+  assert_eq(doc.get("db", "host"), "base")
+  assert_eq(doc.get("db", "port"), "1")
+  // `:` no longer separates, so a line written with one is not an option.
+  match (Ok(@ini.parse("[a]\nx: 1\n", knobs~)) catch { error => Err(error) }) {
+    Err(@ini.BadLine(..)) => ()
+    _ => fail("a colon should not separate under these knobs")
+  }
+}
+
+///|
+test "ini: the tree folds the defaults into every section" {
+  let doc = @ini.parse(
+    "[DEFAULT]\nhost = base\n[db]\nport = 1\n[auth]\nuser = u\n",
+  )
+  let tree = doc.tree(source="app.ini")
+  assert_eq(tree.need_text("db.host"), "base")
+  assert_eq(tree.need_text("auth.host"), "base")
+  assert_eq(tree.need_text("db.port"), "1")
+  assert_eq(tree.find("DEFAULT"), None)
+}

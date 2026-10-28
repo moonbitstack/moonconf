@@ -77,3 +77,10 @@ test "dotenv: an entry records where it was written" {
   assert_eq(entries[1].at.line, 4)
   assert_eq(entries[1].at.column, 1)
 }
+
+///|
+test "dotenv: the tree is the variables the file sets" {
+  let tree = @dotenv.tree("A=1\nB=${A}2\n", source=".env")
+  assert_eq(tree.need_text("A"), "1")
+  assert_eq(tree.need_text("B"), "12")
+}

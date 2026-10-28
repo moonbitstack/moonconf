@@ -4,7 +4,6 @@ package "moonbitstack/moonconf/dotenv"
 import {
   "moonbitlang/core/debug",
   "moonbitstack/moonconf",
-  "moonbitstack/moonconf/expand",
 }
 
 // Values
@@ -14,21 +13,17 @@ pub let interpolated : Knobs
 
 pub let limit : Int32
 
-pub fn load(StringView, vars? : @expand.Vars, knobs? : Knobs, source? : String) -> Map[String, String] raise Refused
+pub fn load(StringView, vars? : Map[String, String], knobs? : Knobs, source? : String) -> Map[String, String] raise Refused
 
-pub fn parse(StringView, source? : String) -> Array[Entry] raise Refused
+pub fn parse(StringView, source? : String) -> Doc raise Refused
 
-pub fn tree(StringView, vars? : @expand.Vars, knobs? : Knobs, source? : String) -> @moonconf.Node raise Refused
+pub fn tree(StringView, vars? : Map[String, String], knobs? : Knobs, source? : String) -> @moonconf.Node raise Refused
 
 pub let verbatim : Knobs
 
 // Errors
 pub(all) suberror Refused {
-  Unclosed(at~ : At)
-  Trailing(at~ : At, got~ : String)
-  BadName(at~ : At, got~ : String)
-  Expand(why~ : String, at~ : At)
-  TooDeep(at~ : At, limit~ : Int32)
+  TooLarge(at~ : At, limit~ : Int32)
 }
 pub fn Refused::output(Self, &Logger) -> Unit
 pub fn Refused::to_string(Self) -> String
@@ -44,10 +39,19 @@ pub fn At::equal(Self, Self) -> Bool
 pub fn At::not_equal(Self, Self) -> Bool
 pub fn At::to_repr(Self) -> @debug.Repr
 
+pub(all) struct Doc {
+  entries : Array[Entry]
+  skipped : Array[Skipped]
+} derive(Eq, @debug.Debug)
+pub fn Doc::equal(Self, Self) -> Bool
+pub fn Doc::get(Self, String) -> String?
+pub fn Doc::keys(Self) -> Array[String]
+pub fn Doc::not_equal(Self, Self) -> Bool
+pub fn Doc::to_repr(Self) -> @debug.Repr
+
 pub(all) struct Entry {
   key : String
-  value : String
-  quoted : Bool
+  value : String?
   at : At
 } derive(Eq, @debug.Debug)
 pub fn Entry::equal(Self, Self) -> Bool
@@ -60,6 +64,14 @@ pub(all) struct Knobs {
 pub fn Knobs::equal(Self, Self) -> Bool
 pub fn Knobs::not_equal(Self, Self) -> Bool
 pub fn Knobs::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Skipped {
+  text : String
+  at : At
+} derive(Eq, @debug.Debug)
+pub fn Skipped::equal(Self, Self) -> Bool
+pub fn Skipped::not_equal(Self, Self) -> Bool
+pub fn Skipped::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

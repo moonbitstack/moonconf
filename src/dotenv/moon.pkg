@@ -7,7 +7,6 @@
 // reference to an earlier entry is expanded.
 import {
   "moonbitstack/moonconf",
-  "moonbitstack/moonconf/expand",
 }
 
 import {

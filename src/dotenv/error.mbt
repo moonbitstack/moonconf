@@ -19,30 +19,21 @@ pub extend At with Eq::{equal, not_equal}
 pub extend At with Debug::{to_repr}
 
 ///|
-/// Why a `.env` text was refused.
+/// Why a `.env` text could not be read at all.
+///
+/// A line the grammar cannot parse is not one of these: it is kept in the
+/// document's [`Skipped`] list, because a reader that refuses a whole file over
+/// one bad line is a reader that leaves a deployment with no configuration at
+/// all. A refusal here means the input is not text this package can even walk.
 pub(all) suberror Refused {
-  /// A quoted value that never ends.
-  Unclosed(at~ : At)
-  /// A line with something after the value that is not a comment.
-  Trailing(at~ : At, got~ : String)
-  /// A name that is empty or holds something a name cannot hold.
-  BadName(at~ : At, got~ : String)
-  /// A reference in a value that the expansion policy refused.
-  Expand(why~ : String, at~ : At)
-  /// Nesting past the limit, or a text too large to be one.
-  TooDeep(at~ : At, limit~ : Int32)
+  /// More text than a configuration file should ever be.
+  TooLarge(at~ : At, limit~ : Int32)
 }
 
 ///|
 fn Refused::message(self : Refused) -> String {
   match self {
-    Unclosed(at~) => "line " + at.line.to_string() + ": a quote is never closed"
-    Trailing(at~, got~) =>
-      "line " + at.line.to_string() + ": `" + got + "` after the value"
-    BadName(at~, got~) =>
-      "line " + at.line.to_string() + ": `" + got + "` is not a name"
-    Expand(why~, at~) => "line " + at.line.to_string() + ": " + why
-    TooDeep(at~, limit~) =>
+    TooLarge(at~, limit~) =>
       "line " +
       at.line.to_string() +
       ": longer than " +

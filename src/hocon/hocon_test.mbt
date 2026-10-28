@@ -222,3 +222,12 @@ test "hocon: a hermetic reading refuses a name only the environment knows" {
     _ => fail("a hermetic reading should not see the environment")
   }
 }
+
+///|
+test "hocon: an include leaves the environment fallback in place" {
+  @env.set_env_var("MOONCONF_ENV_PROBE", "from-env")
+  let knobs = @hocon.Knobs::with_read(fn(_) { None })
+  let doc = @hocon.parse("a = ${MOONCONF_ENV_PROBE}\n", knobs~)
+  @env.unset_env_var("MOONCONF_ENV_PROBE")
+  assert_eq(doc.need_text("a"), "from-env")
+}

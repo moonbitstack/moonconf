@@ -39,14 +39,14 @@ pub let ambient : Knobs = { ..plain, fallback: @env.get_env_var, }
 ///|
 /// A document whose includes are read by `read`, whatever wrapper they used.
 pub fn Knobs::with_read(read : (String) -> String?) -> Knobs {
-  { ..plain, read: fn(_, name) { read(name) }, }
+  { ..ambient, read: fn(_, name) { read(name) }, }
 }
 
 ///|
 /// A document whose includes are read by `from`, told which wrapper was
 /// written: `file`, `url` or `classpath`.
 pub fn Knobs::with_includes(from : (String, String) -> String?) -> Knobs {
-  { ..plain, read: from, }
+  { ..ambient, read: from, }
 }
 
 ///|

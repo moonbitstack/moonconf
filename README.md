@@ -356,7 +356,7 @@ db.port (env@1:1): want integer, got text
 | Function | Meaning |
 |:--|:--|
 | `parse(text, knobs?, source?)` | Read a document into the shared tree |
-| `Knobs::with_read(read)` / `with_includes(from)` | Where an include comes from, with or without its wrapper |
+| `Knobs::with_read(read)` / `with_includes(from)` | Where an include comes from, with or without its wrapper; the environment stays the fallback |
 | `Knobs::with_fallback(lookup)` | Replace where an unresolved name is looked up |
 
 ### `moonconf/hcl`

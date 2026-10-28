@@ -424,6 +424,14 @@ let merged = @moonconf.merge([
 println(merged.need_text("db.host"))   // db.internal
 println(merged.need_text("db.port"))   // 6432
 
+// A .env file is the same idea with fewer brackets.
+let env_file = @dotenv.load("HOST=db.internal\nDSN=postgres://${HOST}/app\n")
+println(env_file.get("DSN").unwrap())  // postgres://db.internal/app
+
+// Text expansion stands on its own, for a value written as a shell writes it.
+let vars = @expand.Vars::of_map(Map([("PORT", "8080")]))
+println(@expand.expand("http://localhost:${PORT:-80}/", vars))
+
 // A model turns the section into a record, with types and defaults.
 let db = @moonmodel.Model::new("Db", [
   @moonmodel.Field::new("host", @moonmodel.Type::Text, required=true),
@@ -551,7 +559,7 @@ url   -&gt; http://localhost:8080/</pre>
           </div>
 
           <table class="spec" style="margin-top: 28px">
-            <caption>The readers</caption>
+            <caption>What each package reads</caption>
             <thead>
               <tr><th>Package</th><th>Reads</th><th>Writes</th><th>Worth knowing</th></tr>
             </thead>

@@ -365,10 +365,10 @@ fallback
 
           <p>
             What an unset variable means is a policy, named:
-            <code>strict</code> refuses, <code>lenient</code> leaves the reference
-            as written, <code>deferred</code> answers nothing. The default is to
-            refuse, because a value that quietly becomes empty is a value nobody
-            notices is missing.
+            <code>strict</code> refuses, <code>lenient</code> reads it as the empty
+            string, <code>deferred</code> leaves the reference as written for a
+            later pass. The default is to refuse, because a value that quietly
+            becomes empty is a value nobody notices is missing.
           </p>
 
           <div class="code-card">

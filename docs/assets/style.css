@@ -380,18 +380,6 @@ samp {
   border-bottom: 1px solid var(--rule);
 }
 
-.hero .watermark {
-  position: absolute;
-  left: -160px;
-  bottom: -230px;
-  width: 620px;
-  height: 620px;
-  color: var(--brass);
-  opacity: 0.06;
-  animation: turn 180s linear infinite;
-  pointer-events: none;
-}
-
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
@@ -940,6 +928,38 @@ samp {
   white-space: nowrap;
 }
 
+/* Drawings, plate markings and chrome are not prose: a selection box dragged
+   across a gear is a reader fight, not a feature. */
+.train,
+.plate,
+.bench-head,
+.step .no,
+.station .idx,
+.station .icon,
+.wordmark,
+.site-nav,
+.site-footer .links,
+.icon-button,
+.layer,
+.seg,
+.tabs,
+.btn,
+.ghost-chip,
+.knurl {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.train svg,
+.station .icon,
+.wordmark .gear {
+  pointer-events: none;
+}
+
+.train {
+  cursor: default;
+}
+
 /* Values take the colour of the layer that won. */
 .t-default {
   color: var(--tier-default);
@@ -1043,13 +1063,9 @@ samp {
 
 .train {
   border: 1px solid var(--rule);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--brass) 4%, transparent),
-      transparent 55%
-    ),
-    var(--panel);
+  /* A flat plate, so a gear filled with the same colour truly occludes the shaft
+     behind it instead of leaving a visible disc. */
+  background: var(--panel);
   padding: 10px 18px 4px;
   margin-bottom: 28px;
 }
@@ -2012,7 +2028,6 @@ select {
   }
 
   .gear-spin,
-  .hero .watermark,
   .bench-head .led {
     animation: none;
   }
@@ -2024,12 +2039,6 @@ select {
   .hero-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 36px;
-  }
-
-  .hero .watermark {
-    left: auto;
-    right: -220px;
-    bottom: -260px;
   }
 
   .stations {

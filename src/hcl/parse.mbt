@@ -1178,6 +1178,24 @@ fn dedented(lines : Array[String]) -> String {
 }
 
 ///|
+/// `key => value...`: the trailing `...` and whether it was there.
+fn strip_group(text : String) -> (String, Bool) {
+  let view = text[:]
+  let mut to = view.length()
+  while to > 0 && is_blank(view.at(to - 1).to_int()) {
+    to -= 1
+  }
+  if to >= 3 &&
+    view.at(to - 1).to_int() == '.'.to_int() &&
+    view.at(to - 2).to_int() == '.'.to_int() &&
+    view.at(to - 3).to_int() == '.'.to_int() {
+    (trimmed(view[0:to - 3]), true)
+  } else {
+    (trimmed(view[0:to]), false)
+  }
+}
+
+///|
 /// `[for x in xs : expr]`, `[for i, x in xs : expr if cond]`.
 fn P::for_list(self : P, start : Int32) -> @moonconf.Node raise Refused {
   self.i += 3
@@ -1294,30 +1312,59 @@ fn P::for_object(self : P, start : Int32) -> @moonconf.Node raise Refused {
     raise self.error(colon + 1)
   }
   let key_src = self.src[colon + 1:arrow].to_owned()
-  let value_src = self.src[arrow + 2:close].to_owned()
+  // A trailing `...` asks for the values with the same key to be gathered into a
+  // list, which is how a `for` over a flat list builds a mapping of lists.
+  let (value_src, grouped) = strip_group(self.src[arrow + 2:close].to_owned())
   self.i = close + 1
   let table = @moonconf.Table::new()
-  let each = fn(key : String, value : @moonconf.Node) -> Unit raise Refused {
+  // One name is the member itself; two names are the key and the member.
+  let each = fn(
+    bound : @moonconf.Node,
+    value : @moonconf.Node,
+  ) -> Unit raise Refused {
     let scope = self.ctx
-    ignore(scope.bind(first, @moonconf.Node::str(key, self.source)))
+    ignore(scope.bind(first, bound))
     match second {
       Some(name) => ignore(scope.bind(name, value))
       None => ()
     }
     let made = render(eval_fragment(key_src, scope, self.source))
-    table.set(made, eval_fragment(value_src, scope, self.source))
+    let value = eval_fragment(value_src, scope, self.source)
+    if grouped {
+      match table.get(made) {
+        Some(existing) =>
+          match existing.value {
+            @moonconf.Value::List(items) => items.push(value)
+            _ =>
+              table.set(
+                made,
+                @moonconf.Node::seq([existing, value], self.source),
+              )
+          }
+        None => table.set(made, @moonconf.Node::seq([value], self.source))
+      }
+    } else {
+      table.set(made, value)
+    }
   }
   match collection.value {
     @moonconf.Value::List(entries) => {
       let mut index = 0
       for entry in entries {
-        each(index.to_string(), entry)
+        match second {
+          Some(_) =>
+            each(@moonconf.Node::num(index.to_int64(), self.source), entry)
+          None => each(entry, entry)
+        }
         index += 1
       }
     }
     @moonconf.Value::Map(items) =>
       for pair in items.items() {
-        each(pair.0, pair.1)
+        match second {
+          Some(_) => each(@moonconf.Node::str(pair.0, self.source), pair.1)
+          None => each(pair.1, pair.1)
+        }
       }
     _ =>
       raise BadOperation(

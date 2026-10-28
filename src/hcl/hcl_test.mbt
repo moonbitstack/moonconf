@@ -211,3 +211,23 @@ test "hcl: windows line endings read the same as unix ones" {
   assert_eq(body.get("a").unwrap().int(), 1L)
   assert_eq(body.blocks[0].body.get("port").unwrap().int(), 2L)
 }
+
+///|
+test "hcl: a grouped for gathers the values of a repeated key" {
+  let body = @hcl.parse(
+    "byTeam = {for s in [{t = \"a\", n = 1}, {t = \"b\", n = 2}, {t = \"a\", n = 3}] : s.t => s.n...}\n",
+  )
+  let table = body.get("byTeam").unwrap().table()
+  assert_eq(table.get("a").unwrap().list().length(), 2)
+  assert_eq(table.get("a").unwrap().list()[1].int(), 3L)
+  assert_eq(table.get("b").unwrap().list().length(), 1)
+}
+
+///|
+test "hcl: a for without grouping keeps the last value of a repeated key" {
+  let body = @hcl.parse(
+    "last = {for s in [{t = \"a\", n = 1}, {t = \"a\", n = 2}] : s.t => s.n}\n",
+  )
+  let table = body.get("last").unwrap().table()
+  assert_eq(table.get("a").unwrap().int(), 2L)
+}

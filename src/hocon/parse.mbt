@@ -60,7 +60,7 @@ fn is_key_end(c : Int32) -> Bool {
 ///|
 priv struct Parser {
   src : StringView
-  read : (String) -> String?
+  read : (String, String) -> String?
   depth : Int32
   mut i : Int32
 }
@@ -274,12 +274,18 @@ fn insert(
     }
     if found >= 0 {
       let before = pairs[found].1
+      // A value written twice may refer to itself: `a = 1` then `a = ${a} 2`
+      // means "what `a` was, and then `2`". The reference is bound to the earlier
+      // value before the two are merged, which is what makes an override that
+      // builds on what it overrides work at all.
+      let full = path[0:index + 1].join(".")
+      let bound = rebind(value, full, before.raw)
       if append {
-        pairs[found] = (key, { raw: appended(before, value), at: before.at, })
+        pairs[found] = (key, { raw: appended(before, bound), at: before.at, })
       } else {
         pairs[found] = (
           key,
-          { raw: merged(before.raw, value.raw), at: before.at, },
+          { raw: merged(before.raw, bound.raw), at: before.at, },
         )
       }
     } else if append {
@@ -312,6 +318,38 @@ fn insert(
         _ => ()
       }
     }
+  }
+}
+
+///|
+/// Replace a reference to `path` with the value that path held before this
+/// definition, everywhere inside `item`.
+fn rebind(item : Item, path : String, previous : Raw) -> Item {
+  match item.raw {
+    Ref(target, _) =>
+      if target == path {
+        { raw: previous, at: item.at, }
+      } else {
+        item
+      }
+    Arr(items) =>
+      {
+        raw: Arr(items.map(fn(child) { rebind(child, path, previous) })),
+        at: item.at,
+      }
+    Obj(pairs) =>
+      {
+        raw: Obj(
+          pairs.map(fn(pair) { (pair.0, rebind(pair.1, path, previous)) }),
+        ),
+        at: item.at,
+      }
+    Concat(items) =>
+      {
+        raw: Concat(items.map(fn(child) { rebind(child, path, previous) })),
+        at: item.at,
+      }
+    _ => item
   }
 }
 
@@ -698,6 +736,8 @@ fn Parser::include_at(
   let start = self.i
   self.i += 7
   let mut required = false
+  // The wrapper the include was written with: `file` unless it says otherwise.
+  let mut kind = "file"
   while true {
     while is_space(self.here()) || is_break(self.here()) {
       self.i += 1
@@ -718,6 +758,11 @@ fn Parser::include_at(
     let word = self.src[from:self.i].to_owned()
     if word == "required" {
       required = true
+    } else if word == "file" || word == "url" || word == "classpath" {
+      // The wrapper names where the text comes from. The caller decides what
+      // that means, because reading a file or a URL is I/O and this package
+      // does none.
+      kind = word
     }
     while is_space(self.here()) {
       self.i += 1
@@ -737,7 +782,7 @@ fn Parser::include_at(
     }
     break
   }
-  let text = match (self.read)(name) {
+  let text = match (self.read)(kind, name) {
     Some(text) => text
     None =>
       if required {

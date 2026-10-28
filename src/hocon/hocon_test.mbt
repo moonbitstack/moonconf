@@ -150,3 +150,52 @@ test "hocon: an object that never closes is refused where it opened" {
     _ => fail("an unclosed object should be refused")
   }
 }
+
+///|
+test "hocon: a second definition may build on the first" {
+  let doc = @hocon.parse("a = 1\na = ${a} 2\nb = [1]\nb = ${b} [2]\n")
+  assert_eq(doc.need_text("a"), "1 2")
+  assert_eq(doc.need("b").list().length(), 2)
+}
+
+///|
+test "hocon: an override that names itself merges what it overrides" {
+  let doc = @hocon.parse("db { host = h, port = 1 }\ndb = ${db} { port = 2 }\n")
+  let db = doc.need("db")
+  assert_eq(db.need_text("host"), "h")
+  assert_eq(db.need_int("port"), 2L)
+}
+
+///|
+test "hocon: a reference *after* the merge still follows the document" {
+  let doc = @hocon.parse("a = 1\na = ${a} 2\nb = ${a}\n")
+  assert_eq(doc.need_text("b"), "1 2")
+}
+
+///|
+test "hocon: an include tells the caller which wrapper it used" {
+  let seen = []
+  let knobs = @hocon.Knobs::with_includes(fn(kind, name) {
+    seen.push(kind + ":" + name)
+    if name == "base.conf" {
+      Some("a = 1\n")
+    } else {
+      None
+    }
+  })
+  let doc = @hocon.parse(
+    "include \"base.conf\"\ninclude url(\"http://host/y.conf\")\ninclude classpath(\"z.conf\")\n",
+    knobs~,
+  )
+  assert_eq(doc.need_int("a"), 1L)
+  assert_eq(seen, [
+    "file:base.conf", "url:http://host/y.conf", "classpath:z.conf",
+  ])
+}
+
+///|
+test "hocon: windows line endings read the same as unix ones" {
+  let doc = @hocon.parse("a = 1\r\nb {\r\n  c = 2\r\n}\r\n")
+  assert_eq(doc.need_int("a"), 1L)
+  assert_eq(doc.need_int("b.c"), 2L)
+}

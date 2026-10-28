@@ -4,9 +4,11 @@
 ///|
 /// How far to look for a name a substitution refers to.
 pub(all) struct Knobs {
-  /// Where an `include` reads from. Answering nothing for a name makes the
-  /// include optional, unless it was written `required(...)`.
-  read : (String) -> String?
+  /// Where an `include` reads from: the wrapper it was written with — `file`,
+  /// `url` or `classpath` — and the name inside it. Answering nothing for a
+  /// name makes the include optional, unless it was written `required(...)`.
+  /// Reading is the caller's job, because this package does no I/O.
+  read : (String, String) -> String?
   /// Where a `${name}` that the document itself does not define is looked up:
   /// the process environment, an overlay, a test fixture. Nothing by default,
   /// because this package does no I/O.
@@ -18,15 +20,22 @@ pub(all) struct Knobs {
 ///|
 /// A document that includes nothing and falls back to nothing.
 pub let plain : Knobs = {
-  read: fn(_) { None },
+  read: fn(_, _) { None },
   fallback: fn(_) { None },
   depth: 64,
 }
 
 ///|
-/// A document whose includes are read by `read`.
+/// A document whose includes are read by `read`, whatever wrapper they used.
 pub fn Knobs::with_read(read : (String) -> String?) -> Knobs {
-  { ..plain, read, }
+  { ..plain, read: fn(_, name) { read(name) }, }
+}
+
+///|
+/// A document whose includes are read by `from`, told which wrapper was
+/// written: `file`, `url` or `classpath`.
+pub fn Knobs::with_includes(from : (String, String) -> String?) -> Knobs {
+  { ..plain, read: from, }
 }
 
 ///|

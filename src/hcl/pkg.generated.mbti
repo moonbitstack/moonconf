@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn expand_template(String, Context, String, At) -> String raise Refused
+
 pub fn here_at(@moonconf.At) -> At
 
 pub let nowhere : At

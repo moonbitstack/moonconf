@@ -201,11 +201,12 @@ fn P::describe(self : P, index : Int32) -> String {
 }
 
 ///|
-/// A quoted string, with its escapes decoded and its `${…}` interpolated.
+/// A quoted string: its escapes decoded, then its `${…}` and `%{…}` forms
+/// expanded.
 fn P::quoted(self : P) -> String raise Refused {
   let start = self.i
   self.i += 1
-  let out = StringBuilder()
+  let raw = StringBuilder()
   while true {
     let c = self.here()
     if c == -1 || c == '\n'.to_int() {
@@ -213,7 +214,12 @@ fn P::quoted(self : P) -> String raise Refused {
     }
     if c == '"'.to_int() {
       self.i += 1
-      return out.to_string()
+      return expand_template(
+        raw.to_string(),
+        self.ctx,
+        self.source,
+        self.spot(start),
+      )
     }
     if c == '\\'.to_int() {
       let next = self.at(self.i + 1)
@@ -226,25 +232,14 @@ fn P::quoted(self : P) -> String raise Refused {
         0x24 => '$'
         _ => next.unsafe_to_char()
       }
-      out.write_char(decoded)
+      raw.write_char(decoded)
       self.i += 2
       continue
     }
-    if c == '$'.to_int() && self.at(self.i + 1) == '{'.to_int() {
-      self.i += 2
-      let value = self.expression()
-      self.space()
-      if self.here() != '}'.to_int() {
-        raise Unclosed(at=self.spot(self.i), got="${")
-      }
-      self.i += 1
-      out.write_string(render(value))
-      continue
-    }
-    out.write_char(c.unsafe_to_char())
+    raw.write_char(c.unsafe_to_char())
     self.i += 1
   }
-  out.to_string()
+  raw.to_string()
 }
 
 ///|
@@ -365,8 +360,8 @@ fn apply(
       @moonconf.Node::flag(truth(left) || truth(right), "", at=root_at(at))
     "&&" =>
       @moonconf.Node::flag(truth(left) && truth(right), "", at=root_at(at))
-    "==" => @moonconf.Node::flag(left == right, "", at=root_at(at))
-    "!=" => @moonconf.Node::flag(left != right, "", at=root_at(at))
+    "==" => @moonconf.Node::flag(left.value == right.value, "", at=root_at(at))
+    "!=" => @moonconf.Node::flag(left.value != right.value, "", at=root_at(at))
     "<" | "<=" | ">" | ">=" => {
       let order = compare(left, right, at)
       let answer = match op {
@@ -509,13 +504,34 @@ fn P::unary(self : P) -> @moonconf.Node raise Refused {
 /// A primary value, then the members and indexes that follow it.
 fn P::postfix(self : P) -> @moonconf.Node raise Refused {
   let mut value = self.primary()
+  let mut splatting = false
   while true {
     self.space()
+    if self.here() == '['.to_int() &&
+      self.at(self.i + 1) == '*'.to_int() &&
+      self.at(self.i + 2) == ']'.to_int() {
+      // `xs[*]` is every member of `xs`; what follows is asked of each in turn.
+      self.i += 3
+      value = spread(value, self.source)
+      splatting = true
+      continue
+    }
     if self.here() == '.'.to_int() {
       self.i += 1
       self.space()
+      if self.here() == '*'.to_int() {
+        // `xs.*` is the older spelling of the same thing.
+        self.i += 1
+        value = spread(value, self.source)
+        splatting = true
+        continue
+      }
       let name = self.name()
-      value = get_member(value, name, self.spot(self.i))
+      value = if splatting {
+        project(value, name, self.spot(self.i))
+      } else {
+        get_member(value, name, self.spot(self.i))
+      }
       continue
     }
     if self.here() == '['.to_int() {
@@ -526,12 +542,70 @@ fn P::postfix(self : P) -> @moonconf.Node raise Refused {
         raise self.error(self.i)
       }
       self.i += 1
-      value = index_into(value, index, self.spot(self.i))
+      value = if splatting {
+        project_index(value, index, self.spot(self.i))
+      } else {
+        index_into(value, index, self.spot(self.i))
+      }
       continue
     }
     return value
   }
   value
+}
+
+///|
+/// Every member of a list, or the values of a mapping, as a list.
+fn spread(value : @moonconf.Node, source : String) -> @moonconf.Node {
+  match value.value {
+    @moonconf.Value::List(_) => value
+    @moonconf.Value::Map(table) => {
+      let out = []
+      for pair in table.items() {
+        out.push(pair.1)
+      }
+      @moonconf.Node::seq(out, source)
+    }
+    _ => @moonconf.Node::seq([value], source)
+  }
+}
+
+///|
+/// `xs[*].name`: the member asked of every member of `xs`.
+fn project(
+  value : @moonconf.Node,
+  name : String,
+  at : At,
+) -> @moonconf.Node raise Refused {
+  match value.value {
+    @moonconf.Value::List(items) => {
+      let out = []
+      for item in items {
+        out.push(get_member(item, name, at))
+      }
+      @moonconf.Node::seq(out, "")
+    }
+    _ => get_member(value, name, at)
+  }
+}
+
+///|
+/// `xs[*][0]`: the index asked of every member of `xs`.
+fn project_index(
+  value : @moonconf.Node,
+  index : @moonconf.Node,
+  at : At,
+) -> @moonconf.Node raise Refused {
+  match value.value {
+    @moonconf.Value::List(items) => {
+      let out = []
+      for item in items {
+        out.push(index_into(item, index, at))
+      }
+      @moonconf.Node::seq(out, "")
+    }
+    _ => index_into(value, index, at)
+  }
 }
 
 ///|
@@ -598,6 +672,10 @@ fn P::primary(self : P) -> @moonconf.Node raise Refused {
   }
   if c == '['.to_int() {
     self.i += 1
+    self.space()
+    if self.starts("for") {
+      return self.for_list(start)
+    }
     let items = []
     while true {
       self.space()
@@ -621,6 +699,10 @@ fn P::primary(self : P) -> @moonconf.Node raise Refused {
   }
   if c == '{'.to_int() {
     self.i += 1
+    self.space()
+    if self.starts("for") {
+      return self.for_object(start)
+    }
     let table = @moonconf.Table::new()
     while true {
       self.space()
@@ -683,6 +765,9 @@ fn P::primary(self : P) -> @moonconf.Node raise Refused {
       self.source,
       root_at(self.spot(start)),
     )
+  }
+  if c == '<'.to_int() && self.at(self.i + 1) == '<'.to_int() {
+    return self.heredoc()
   }
   if is_name_start(c) {
     let name = self.name()
@@ -878,4 +963,371 @@ fn label_chain(node : @moonconf.Node) -> (Array[String], @moonconf.Node)? {
     }
   }
   None
+}
+
+///|
+/// Evaluate an expression written in a string of its own: a `${…}` inside a
+/// template, or one half of a `for`.
+fn eval_fragment(
+  text : String,
+  ctx : Context,
+  source : String,
+) -> @moonconf.Node raise Refused {
+  let parser : P = { src: text[:], ctx, source, depth: 0, i: 0, }
+  let value = parser.expression()
+  parser.space()
+  if parser.i < text.length() {
+    raise Unexpected(at=parser.spot(parser.i), got=parser.describe(parser.i))
+  }
+  value
+}
+
+///|
+/// Whether `word` stands at the current position as a whole word.
+fn P::starts(self : P, word : String) -> Bool {
+  let view = word[:]
+  let mut i = 0
+  while i < view.length() {
+    if self.at(self.i + i) != view.at(i).to_int() {
+      return false
+    }
+    i += 1
+  }
+  !is_name_part(self.at(self.i + view.length()))
+}
+
+///|
+/// The index of `close` that matches the `open` just before `from`, or the end
+/// of the text when nothing closes it.
+fn P::matching(self : P, from : Int32, open : Int32, close : Int32) -> Int32 {
+  let mut depth = 1
+  let mut i = from
+  while i < self.src.length() {
+    let c = self.at(i)
+    if c == '"'.to_int() {
+      i += 1
+      while i < self.src.length() && self.at(i) != '"'.to_int() {
+        if self.at(i) == '\\'.to_int() {
+          i += 1
+        }
+        i += 1
+      }
+      i += 1
+      continue
+    }
+    if c == open {
+      depth += 1
+    } else if c == close {
+      depth -= 1
+      if depth == 0 {
+        return i
+      }
+    }
+    i += 1
+  }
+  self.src.length()
+}
+
+///|
+/// The index of `stop` at bracket depth zero in `[from, to)`, or -1.
+fn P::top_level(self : P, from : Int32, to : Int32, stop : Int32) -> Int32 {
+  let mut depth = 0
+  let mut i = from
+  while i < to {
+    let c = self.at(i)
+    if c == '"'.to_int() {
+      i += 1
+      while i < to && self.at(i) != '"'.to_int() {
+        if self.at(i) == '\\'.to_int() {
+          i += 1
+        }
+        i += 1
+      }
+      i += 1
+      continue
+    }
+    if c == '['.to_int() || c == '{'.to_int() || c == '('.to_int() {
+      depth += 1
+    } else if c == ']'.to_int() || c == '}'.to_int() || c == ')'.to_int() {
+      depth -= 1
+    } else if depth == 0 && c == stop {
+      return i
+    }
+    i += 1
+  }
+  -1
+}
+
+///|
+/// The index of the word ` if ` at depth zero in `[from, to)`, or -1.
+fn P::top_level_if(self : P, from : Int32, to : Int32) -> Int32 {
+  let mut depth = 0
+  let mut i = from
+  while i + 4 <= to {
+    let c = self.at(i)
+    if c == '"'.to_int() {
+      i += 1
+      while i < to && self.at(i) != '"'.to_int() {
+        if self.at(i) == '\\'.to_int() {
+          i += 1
+        }
+        i += 1
+      }
+      i += 1
+      continue
+    }
+    if c == '['.to_int() || c == '{'.to_int() || c == '('.to_int() {
+      depth += 1
+    } else if c == ']'.to_int() || c == '}'.to_int() || c == ')'.to_int() {
+      depth -= 1
+    } else if depth == 0 &&
+      is_blank(c) &&
+      self.at(i + 1) == 'i'.to_int() &&
+      self.at(i + 2) == 'f'.to_int() &&
+      is_blank(self.at(i + 3)) {
+      return i
+    }
+    i += 1
+  }
+  -1
+}
+
+///|
+/// `<<EOF`, `<<-EOF`: a string that runs to a line of its own.
+fn P::heredoc(self : P) -> @moonconf.Node raise Refused {
+  let start = self.i
+  self.i += 2
+  let mut strip = false
+  if self.here() == '-'.to_int() {
+    strip = true
+    self.i += 1
+  }
+  let marker = self.name()
+  if marker == "" {
+    raise self.error(start)
+  }
+  while self.here() != -1 && self.here() != '\n'.to_int() {
+    self.i += 1
+  }
+  if self.here() == '\n'.to_int() {
+    self.i += 1
+  }
+  let lines : Array[String] = []
+  while true {
+    if self.i >= self.src.length() {
+      raise Unclosed(at=self.spot(start), got="<<")
+    }
+    let from = self.i
+    while self.i < self.src.length() && self.here() != '\n'.to_int() {
+      self.i += 1
+    }
+    let mut end = self.i
+    if end > from && self.at(end - 1) == '\r'.to_int() {
+      end -= 1
+    }
+    let line = self.src[from:end]
+    if trimmed(line) == marker {
+      if self.here() == '\n'.to_int() {
+        self.i += 1
+      }
+      break
+    }
+    lines.push(line.to_owned())
+    if self.here() == '\n'.to_int() {
+      self.i += 1
+    }
+  }
+  let body = if strip { dedented(lines) } else { lines.join("\n") }
+  let text = if body == "" { body } else { body + "\n" }
+  @moonconf.Node::str(
+    expand_template(text, self.ctx, self.source, self.spot(start)),
+    self.source,
+    at=root_at(self.spot(start)),
+  )
+}
+
+///|
+/// The lines with the indentation they share taken away, for `<<-`.
+fn dedented(lines : Array[String]) -> String {
+  let mut least = -1
+  for line in lines {
+    let view = line[:]
+    let mut indent = 0
+    while indent < view.length() && is_blank(view.at(indent).to_int()) {
+      indent += 1
+    }
+    if indent < view.length() {
+      if least < 0 || indent < least {
+        least = indent
+      }
+    }
+  }
+  let cut = if least < 0 { 0 } else { least }
+  let out = []
+  for line in lines {
+    let view = line[:]
+    let mut start = 0
+    while start < cut &&
+          start < view.length() &&
+          is_blank(view.at(start).to_int()) {
+      start += 1
+    }
+    out.push(view[start:].to_owned())
+  }
+  out.join("\n")
+}
+
+///|
+/// `[for x in xs : expr]`, `[for i, x in xs : expr if cond]`.
+fn P::for_list(self : P, start : Int32) -> @moonconf.Node raise Refused {
+  self.i += 3
+  self.space()
+  let first = self.name()
+  self.space()
+  let mut second : String? = None
+  if self.here() == ','.to_int() {
+    self.i += 1
+    self.space()
+    second = Some(self.name())
+    self.space()
+  }
+  if !self.starts("in") {
+    raise self.error(self.i)
+  }
+  self.i += 2
+  let from = self.i
+  let close = self.matching(from + 1, '['.to_int(), ']'.to_int())
+  let colon = self.top_level(from, close, ':'.to_int())
+  if colon < 0 {
+    raise self.error(from)
+  }
+  let collection = eval_fragment(
+    self.src[from:colon].to_owned(),
+    self.ctx,
+    self.source,
+  )
+  let body_from = colon + 1
+  let test_at = self.top_level_if(body_from, close)
+  let body_to = if test_at < 0 { close } else { test_at }
+  let body = self.src[body_from:body_to].to_owned()
+  let filter = if test_at < 0 {
+    ""
+  } else {
+    self.src[test_at + 4:close].to_owned()
+  }
+  self.i = close + 1
+  let items : Array[@moonconf.Node] = []
+  let each = fn(node : @moonconf.Node, index : Int32) -> Unit raise Refused {
+    let scope = self.ctx
+    match second {
+      // Two names are the index and the member, in that order.
+      Some(name) => {
+        ignore(
+          scope.bind(first, @moonconf.Node::num(index.to_int64(), self.source)),
+        )
+        ignore(scope.bind(name, node))
+      }
+      None => ignore(scope.bind(first, node))
+    }
+    if filter == "" || truth(eval_fragment(filter, scope, self.source)) {
+      items.push(eval_fragment(body, scope, self.source))
+    }
+  }
+  match collection.value {
+    @moonconf.Value::List(entries) => {
+      let mut index = 0
+      for entry in entries {
+        each(entry, index)
+        index += 1
+      }
+    }
+    @moonconf.Value::Map(table) => {
+      let mut index = 0
+      for pair in table.items() {
+        match second {
+          Some(_) => each(@moonconf.Node::str(pair.0, self.source), index)
+          None => each(pair.1, index)
+        }
+        index += 1
+      }
+    }
+    _ =>
+      raise BadOperation(
+        why="a for wants a list or a mapping",
+        at=self.spot(start),
+      )
+  }
+  @moonconf.Node::seq(items, self.source, at=root_at(self.spot(start)))
+}
+
+///|
+/// `{for k, v in m : k => v}`.
+fn P::for_object(self : P, start : Int32) -> @moonconf.Node raise Refused {
+  self.i += 3
+  self.space()
+  let first = self.name()
+  self.space()
+  let mut second : String? = None
+  if self.here() == ','.to_int() {
+    self.i += 1
+    self.space()
+    second = Some(self.name())
+    self.space()
+  }
+  if !self.starts("in") {
+    raise self.error(self.i)
+  }
+  self.i += 2
+  let from = self.i
+  let close = self.matching(from + 1, '{'.to_int(), '}'.to_int())
+  let colon = self.top_level(from, close, ':'.to_int())
+  if colon < 0 {
+    raise self.error(from)
+  }
+  let collection = eval_fragment(
+    self.src[from:colon].to_owned(),
+    self.ctx,
+    self.source,
+  )
+  let arrow = self.top_level(colon + 1, close, '='.to_int())
+  if arrow < 0 {
+    raise self.error(colon + 1)
+  }
+  let key_src = self.src[colon + 1:arrow].to_owned()
+  let value_src = self.src[arrow + 2:close].to_owned()
+  self.i = close + 1
+  let table = @moonconf.Table::new()
+  let each = fn(key : String, value : @moonconf.Node) -> Unit raise Refused {
+    let scope = self.ctx
+    ignore(scope.bind(first, @moonconf.Node::str(key, self.source)))
+    match second {
+      Some(name) => ignore(scope.bind(name, value))
+      None => ()
+    }
+    let made = render(eval_fragment(key_src, scope, self.source))
+    table.set(made, eval_fragment(value_src, scope, self.source))
+  }
+  match collection.value {
+    @moonconf.Value::List(entries) => {
+      let mut index = 0
+      for entry in entries {
+        each(index.to_string(), entry)
+        index += 1
+      }
+    }
+    @moonconf.Value::Map(items) =>
+      for pair in items.items() {
+        each(pair.0, pair.1)
+      }
+    _ =>
+      raise BadOperation(
+        why="a for wants a list or a mapping",
+        at=self.spot(start),
+      )
+  }
+  @moonconf.Node::new(
+    @moonconf.Value::Map(table),
+    self.source,
+    root_at(self.spot(start)),
+  )
 }

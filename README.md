@@ -134,7 +134,7 @@ ISO-8859-1, one byte to one character; `parse` takes text.
 ```dotenv
 export HOST=localhost
 DSN="postgres://${HOST}/app"
-LITERAL='${not expanded}'
+GREETING='it\'s here'
 ```
 
 ```moonbit check
@@ -145,8 +145,16 @@ test {
 ```
 
 A reference sees the entries above it, so the order in the file is the order of
-evaluation. Single quotes are literal; double quotes decode escapes and expand;
-an unquoted value keeps its `#`.
+evaluation. A later assignment wins. The two kinds of quote differ in their
+escapes, not in whether a reference is expanded: inside single quotes only `\'`
+and `\\` mean anything, while double quotes also take `\n`, `\t`, `\r` and the
+rest. A `#` starts a comment at the beginning of a line or after whitespace, and
+is part of the value when a character comes before it, so `a#b` is a value and
+`a # b` is `a`.
+
+A line that is not an assignment — a stray word, a quote that never closes — is
+kept in `Doc::skipped` rather than failing the whole file: one bad line should
+not cost a deployment its configuration.
 
 ### POSIX expansion
 
@@ -190,8 +198,14 @@ test {
 - `${a.b}` is the value at that path; `${?a.b}` is that value when it is there
   and nothing at all when it is not, so a field that depends on an unset name
   simply is not there.
-- `include "x"` asks the caller's `read` for the text. Nothing is fetched here.
-- A cycle is reported as one, rather than resolved into nonsense.
+- `include "x"` asks the caller's `read` for the text. `include url("…")` and
+  `include classpath("…")` ask the same function, told which wrapper was written,
+  so a caller that can fetch a URL can answer all three. Nothing is fetched here:
+  reading is I/O, and this package does none.
+- A value written twice may refer to itself: `a = 1` then `a = ${a} 2` is `1 2`,
+  and `db = ${db} { port = 2 }` overrides one member of `db` and keeps the rest.
+- A cycle that is not a definition building on itself is reported as one, rather
+  than resolved into nonsense.
 
 ### HCL
 
@@ -225,8 +239,14 @@ is a block and the member names are its labels.
 `Body::tree()` turns a body into the shared tree: attributes under their names,
 and blocks under theirs, so a document of blocks merges like any other.
 
-Not part of this reader: template directives (`%{ if }`), heredocs, and `for`
-expressions.
+A string is a template: `${ … }` inserts an expression, `%{ if } … %{ else } …
+%{ endif }` chooses, and `%{ for x in xs } … %{ endfor }` repeats, with `~` on
+either side of a marker to take the whitespace around it away. `<<EOF` and
+`<<-EOF` are heredocs, interpolated the same way. A list or a mapping can be
+built by a `for` expression, with an optional `if` filter, and `xs[*].name` asks
+the same question of every member.
+
+Not part of this reader: the `...` grouping form of an object `for`.
 
 ## Binding
 
@@ -318,7 +338,7 @@ db.port (env@1:1): want integer, got text
 
 | Function | Meaning |
 |:--|:--|
-| `parse(text, source?)` | The entries, as written |
+| `parse(text, source?)` | The entries, and the lines that were not ones |
 | `load(text, vars?, knobs?, source?)` | The variables, references expanded |
 | `tree(text, vars?, knobs?, source?)` | The file as the shared tree |
 | `dumps(entries)` | Write it back |
@@ -328,7 +348,8 @@ db.port (env@1:1): want integer, got text
 | Function | Meaning |
 |:--|:--|
 | `parse(text, knobs?, source?)` | Read a document into the shared tree |
-| `Knobs::with_read(read)` / `with_fallback(lookup)` | Where includes and unresolved names come from |
+| `Knobs::with_read(read)` / `with_includes(from)` | Where an include comes from, with or without its wrapper |
+| `Knobs::with_fallback(lookup)` | Where an unresolved name is looked up |
 
 ### `moonconf/hcl`
 

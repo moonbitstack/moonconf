@@ -460,6 +460,7 @@ TEMPLATE = """<!DOCTYPE html>
       content="Every public package, type, value, field, method and error of moonconf, with the sentence its source wrote about it."
     />
     <link rel="stylesheet" href="assets/style.css?v=1" />
+    <script type="module" src="assets/scrollbar.js"></script>
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230e1012'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23e0a94a' stroke-width='4' stroke-dasharray='3 3'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23e0a94a'/%3E%3C/svg%3E"

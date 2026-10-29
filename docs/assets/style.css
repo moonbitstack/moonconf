@@ -174,11 +174,6 @@ samp {
 }
 
 /* Scrollbars: knurled, not the browser's own. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-2) transparent;
-}
-
 @supports not selector(::-webkit-scrollbar) {
   * {
     scrollbar-width: thin;
@@ -2210,4 +2205,22 @@ select {
   .layer .format {
     display: none;
   }
+}
+
+/* The page scroll bar shows while the page moves or under the pointer and
+   hides a moment after; it keeps its place, so nothing shifts. */
+@supports selector(::-webkit-scrollbar) {
+  html:not(.scrolling)::-webkit-scrollbar-thumb { background: transparent; border-color: transparent; box-shadow: none; }
+}
+@supports not selector(::-webkit-scrollbar) {
+  html:not(.scrolling) { scrollbar-color: transparent transparent; }
+}
+
+/* Long identifiers in running text break rather than widen the page. */
+:where(p, li, td, dd, h1, h2, h3, h4) code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Grid items give way to their scrolling code instead of widening the page. */
+.duo > * { min-width: 0; }
+@media (width <= 560px) {
+  table.spec { display: block; overflow-x: auto; }
 }

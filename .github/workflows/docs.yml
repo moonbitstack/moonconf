@@ -1,4 +1,4 @@
-name: Docs site
+name: Docs
 
 # Publish the site: the homepage, the guide, the showcase and the generated API
 # reference. The API page is regenerated here and the build fails when the

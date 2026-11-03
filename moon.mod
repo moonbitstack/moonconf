@@ -1,6 +1,6 @@
 name = "moonbitstack/moonconf"
 
-version = "0.1.1"
+version = "0.1.2"
 
 readme = "README.md"
 
@@ -10,11 +10,19 @@ license = "Apache-2.0"
 
 keywords = [
   "config",
+  "configuration",
   "ini",
   "properties",
+  "java-properties",
   "dotenv",
+  "env",
   "hocon",
   "hcl",
+  "variable-expansion",
+  "interpolation",
+  "layering",
+  "binding",
+  "settings",
   "moonbit",
 ]
 

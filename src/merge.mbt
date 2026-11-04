@@ -9,6 +9,7 @@
 /// then whatever the command line said — is a fact about deployment, not about
 /// this repository, and naming it means a caller who wants the usual thing does
 /// not write it out.
+#derive(Eq, Debug)
 pub(all) enum Tier {
   /// Values the program carries with it, used when nothing overrides them.
   Default
@@ -18,10 +19,11 @@ pub(all) enum Tier {
   Env
   /// Whatever the caller declares last: flags, a test fixture, an override.
   Override
-} derive(Eq, Debug)
+}
 
 ///|
 /// What to do when two layers name the same value and disagree.
+#derive(Eq, Debug)
 pub(all) enum Clash {
   /// The stronger layer wins, silently. What everybody does.
   Last
@@ -30,7 +32,7 @@ pub(all) enum Clash {
   /// Two layers naming the same value is an error. For a configuration where
   /// an accidental override is a bug.
   Refuse
-} derive(Eq, Debug)
+}
 
 ///|
 /// How to merge: which tier is stronger, and what a disagreement means.
@@ -40,12 +42,13 @@ pub(all) enum Clash {
 /// tiers in a different order is how a caller reverses the direction of the
 /// whole stack — an overlay read after the base file, say — without touching any
 /// parser.
+#derive(Eq, Debug)
 pub(all) struct Knobs {
   /// Tiers from weakest to strongest: the last one wins.
   wins : Array[Tier]
   /// What a disagreement means.
   clash : Clash
-} derive(Eq, Debug)
+}
 
 ///|
 /// Defaults below files below the environment below explicit overrides, with
@@ -55,6 +58,7 @@ pub let layered : Knobs = { wins: [Default, File, Env, Override], clash: Last, }
 ///|
 /// One layer of a configuration: a tree, the tier it belongs to, and the name
 /// that goes into error messages.
+#derive(Eq, Debug)
 pub(all) struct Source {
   /// Which layer this is.
   tier : Tier
@@ -62,7 +66,7 @@ pub(all) struct Source {
   name : String
   /// The tree this layer contributes.
   node : Node
-} derive(Eq, Debug)
+}
 
 ///|
 /// A source whose name is taken from the tree it carries.

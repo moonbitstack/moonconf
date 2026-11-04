@@ -3,6 +3,7 @@
 
 ///|
 /// Where in the text a pair was written.
+#derive(Eq, Debug)
 pub(all) struct At {
   /// The offset in UTF-16 code units from the start.
   at : Int32
@@ -10,7 +11,7 @@ pub(all) struct At {
   line : Int32
   /// The column, counting from one.
   column : Int32
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend At with Eq::{equal, not_equal}
@@ -55,6 +56,7 @@ pub extend Refused with Show::{to_string, output}
 
 ///|
 /// One name and its value.
+#derive(Eq, Debug)
 pub(all) struct Pair {
   /// The name, with its escapes decoded.
   key : String
@@ -62,7 +64,7 @@ pub(all) struct Pair {
   value : String
   /// Where the pair was written.
   at : At
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Pair with Eq::{equal, not_equal}
@@ -76,10 +78,11 @@ pub extend Pair with Debug::{to_repr}
 /// A later pair with the same name wins, which is what a map does and what the
 /// reader this follows does. The order is kept because a file written back with
 /// its lines shuffled is a file nobody can diff.
+#derive(Eq, Debug)
 pub(all) struct Doc {
   /// The pairs, in the order they were read, duplicates included.
   pairs : Array[Pair]
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Doc with Eq::{equal, not_equal}

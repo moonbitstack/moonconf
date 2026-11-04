@@ -3,6 +3,7 @@
 
 ///|
 /// Where in the text an entry was written.
+#derive(Eq, Debug)
 pub(all) struct At {
   /// The offset in UTF-16 code units from the start.
   at : Int32
@@ -10,7 +11,7 @@ pub(all) struct At {
   line : Int32
   /// The column, counting from one.
   column : Int32
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend At with Eq::{equal, not_equal}

@@ -30,45 +30,50 @@ pub fn Refused::to_string(Self) -> String
 pub impl Show for Refused
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct At {
   at : Int32
   line : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn At::equal(Self, Self) -> Bool
 pub fn At::not_equal(Self, Self) -> Bool
 pub fn At::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Doc {
   entries : Array[Entry]
   skipped : Array[Skipped]
-} derive(Eq, @debug.Debug)
+}
 pub fn Doc::equal(Self, Self) -> Bool
 pub fn Doc::get(Self, String) -> String?
 pub fn Doc::keys(Self) -> Array[String]
 pub fn Doc::not_equal(Self, Self) -> Bool
 pub fn Doc::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Entry {
   key : String
   value : String?
   at : At
-} derive(Eq, @debug.Debug)
+}
 pub fn Entry::equal(Self, Self) -> Bool
 pub fn Entry::not_equal(Self, Self) -> Bool
 pub fn Entry::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Knobs {
   interpolate : Bool
-} derive(Eq, @debug.Debug)
+}
 pub fn Knobs::equal(Self, Self) -> Bool
 pub fn Knobs::not_equal(Self, Self) -> Bool
 pub fn Knobs::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Skipped {
   text : String
   at : At
-} derive(Eq, @debug.Debug)
+}
 pub fn Skipped::equal(Self, Self) -> Bool
 pub fn Skipped::not_equal(Self, Self) -> Bool
 pub fn Skipped::to_repr(Self) -> @debug.Repr

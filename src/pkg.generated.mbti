@@ -3,11 +3,12 @@ package "moonbitstack/moonconf"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
   "moonbitstack/moonmodel",
 }
 
 // Values
-pub fn bind(Node, @moonmodel.Model, known? : Array[@moonmodel.Model], knobs? : Bind) -> Json raise Refused
+pub fn bind(Node, @moonmodel.Model, known? : Array[@moonmodel.Model], knobs? : Bind) -> @json.Json raise Refused
 
 pub let closed : Bind
 
@@ -17,7 +18,7 @@ pub let layered : Knobs
 
 pub fn merge(Array[Source], knobs? : Knobs) -> Node raise Refused
 
-pub fn native(Node) -> Json
+pub fn native(Node) -> @json.Json
 
 pub fn of_json(StringView, source? : String) -> Node raise Refused
 
@@ -52,53 +53,59 @@ pub fn Refused::to_string(Self) -> String
 pub impl Show for Refused
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct At {
   at : Int32
   line : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn At::equal(Self, Self) -> Bool
 pub fn At::not_equal(Self, Self) -> Bool
 pub fn At::of(StringView, Int32) -> Self
 pub fn At::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Bind {
   extra : Extra
-} derive(Eq, @debug.Debug)
+}
 pub fn Bind::equal(Self, Self) -> Bool
 pub fn Bind::not_equal(Self, Self) -> Bool
 pub fn Bind::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Clash {
   Last
   First
   Refuse
-} derive(Eq, @debug.Debug)
+}
 pub fn Clash::equal(Self, Self) -> Bool
 pub fn Clash::not_equal(Self, Self) -> Bool
 pub fn Clash::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Extra {
   Allow
   Refuse
-} derive(Eq, @debug.Debug)
+}
 pub fn Extra::equal(Self, Self) -> Bool
 pub fn Extra::not_equal(Self, Self) -> Bool
 pub fn Extra::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Knobs {
   wins : Array[Tier]
   clash : Clash
-} derive(Eq, @debug.Debug)
+}
 pub fn Knobs::equal(Self, Self) -> Bool
 pub fn Knobs::not_equal(Self, Self) -> Bool
 pub fn Knobs::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Node {
   value : Value
   source : String
   at : At
-} derive(Eq, @debug.Debug)
+}
 pub fn Node::bool(Self) -> Bool raise Refused
 pub fn Node::copy(Self) -> Self
 pub fn Node::equal(Self, Self) -> Bool
@@ -128,19 +135,21 @@ pub fn Node::table(Self) -> Table raise Refused
 pub fn Node::text(Self) -> String raise Refused
 pub fn Node::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Source {
   tier : Tier
   name : String
   node : Node
-} derive(Eq, @debug.Debug)
+}
 pub fn Source::equal(Self, Self) -> Bool
 pub fn Source::new(Tier, String, Node) -> Self
 pub fn Source::not_equal(Self, Self) -> Bool
 pub fn Source::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Table {
   entries : Array[(String, Node)]
-} derive(Eq, @debug.Debug)
+}
 pub fn Table::copy(Self) -> Self
 pub fn Table::equal(Self, Self) -> Bool
 pub fn Table::get(Self, String) -> Node?
@@ -155,16 +164,18 @@ pub fn Table::remove(Self, String) -> Node?
 pub fn Table::set(Self, String, Node) -> Unit
 pub fn Table::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Tier {
   Default
   File
   Env
   Override
-} derive(Eq, @debug.Debug)
+}
 pub fn Tier::equal(Self, Self) -> Bool
 pub fn Tier::not_equal(Self, Self) -> Bool
 pub fn Tier::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Value {
   Null
   Bool(Bool)
@@ -173,7 +184,7 @@ pub(all) enum Value {
   Text(String)
   List(Array[Node])
   Map(Table)
-} derive(Eq, @debug.Debug)
+}
 pub fn Value::equal(Self, Self) -> Bool
 pub fn Value::not_equal(Self, Self) -> Bool
 pub fn Value::to_repr(Self) -> @debug.Repr

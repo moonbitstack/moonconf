@@ -29,11 +29,12 @@ pub fn Refused::to_string(Self) -> String
 pub impl Show for Refused
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct At {
   at : Int32
   line : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn At::equal(Self, Self) -> Bool
 pub fn At::not_equal(Self, Self) -> Bool
 pub fn At::to_repr(Self) -> @debug.Repr

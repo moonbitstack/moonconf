@@ -29,29 +29,32 @@ pub fn Refused::to_string(Self) -> String
 pub impl Show for Refused
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct At {
   at : Int32
   line : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn At::equal(Self, Self) -> Bool
 pub fn At::not_equal(Self, Self) -> Bool
 pub fn At::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Block {
   kind : String
   labels : Array[String]
   body : Body
   at : At
-} derive(Eq, @debug.Debug)
+}
 pub fn Block::equal(Self, Self) -> Bool
 pub fn Block::not_equal(Self, Self) -> Bool
 pub fn Block::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Body {
   attributes : Array[(String, @moonconf.Node)]
   blocks : Array[Block]
-} derive(Eq, @debug.Debug)
+}
 pub fn Body::blocks_of(Self, String) -> Array[Block]
 pub fn Body::equal(Self, Self) -> Bool
 pub fn Body::get(Self, String) -> @moonconf.Node?

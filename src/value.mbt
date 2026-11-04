@@ -6,10 +6,11 @@
 /// configuration file does: an INI file written back with its sections sorted
 /// alphabetically is a different file, and a person diffing it sees noise
 /// instead of their change.
+#derive(Eq, Debug)
 pub(all) struct Table {
   /// The members, in the order they were written.
   entries : Array[(String, Node)]
-} derive(Eq, Debug)
+}
 
 ///|
 /// An empty mapping.
@@ -103,6 +104,7 @@ pub fn Table::copy(self : Table) -> Table {
 /// Numbers keep their kind: an integer stays an integer so that a port number
 /// written as `8080` is not printed back as `8080.0`, and so that a binding to
 /// an `Int` field can accept it without guessing.
+#derive(Eq, Debug)
 pub(all) enum Value {
   /// Nothing was written, and nothing was meant.
   Null
@@ -118,11 +120,12 @@ pub(all) enum Value {
   List(Array[Node])
   /// A mapping, in the order its members were written.
   Map(Table)
-} derive(Eq, Debug)
+}
 
 ///|
 /// A value and the provenance that makes an error message usable: which source
 /// it came from, and where in that source it was written.
+#derive(Eq, Debug)
 pub(all) struct Node {
   /// The value itself.
   value : Value
@@ -130,7 +133,7 @@ pub(all) struct Node {
   source : String
   /// Where in that source the value was written.
   at : At
-} derive(Eq, Debug)
+}
 
 ///|
 /// A node of any value, with the source it came from and where in it.

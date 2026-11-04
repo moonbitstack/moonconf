@@ -3,6 +3,7 @@
 
 ///|
 /// What a reference to a variable that has no value means.
+#derive(Eq, Debug)
 pub(all) enum Unset {
   /// A reference to nothing is an error. The default, and what `set -u` does:
   /// a missing setting is nearly always the bug, and a diagnostic at the point
@@ -14,7 +15,7 @@ pub(all) enum Unset {
   /// A missing variable leaves the reference as written, `${A}`, so a later
   /// stage can fill it in.
   Keep
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Unset with Eq::{equal, not_equal}
@@ -24,10 +25,11 @@ pub extend Unset with Debug::{to_repr}
 
 ///|
 /// How far to expand.
+#derive(Eq, Debug)
 pub(all) struct Knobs {
   /// What a reference to a variable with no value means.
   unset : Unset
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Knobs with Eq::{equal, not_equal}

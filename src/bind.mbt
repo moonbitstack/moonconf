@@ -3,6 +3,7 @@
 
 ///|
 /// What to do with a member no field of the model describes.
+#derive(Eq, Debug)
 pub(all) enum Extra {
   /// Carry it through. The default, because a configuration often has more in
   /// it than one model describes: shared settings, another program's section.
@@ -10,14 +11,15 @@ pub(all) enum Extra {
   /// Refuse it. For a deployment where a misspelled key is a bug that must be
   /// caught at startup, not a typo that silently does nothing.
   Refuse
-} derive(Eq, Debug)
+}
 
 ///|
 /// How to bind.
+#derive(Eq, Debug)
 pub(all) struct Bind {
   /// What an undescribed member means.
   extra : Extra
-} derive(Eq, Debug)
+}
 
 ///|
 /// Bind the members the model describes and carry the rest through.

@@ -3,6 +3,7 @@
 
 ///|
 /// A block of a body: a name, its labels, and the body inside its braces.
+#derive(Eq, Debug)
 pub(all) struct Block {
   /// The name in front of the braces: `resource`, `server`, `module`.
   kind : String
@@ -12,7 +13,7 @@ pub(all) struct Block {
   body : Body
   /// Where the name was written.
   at : At
-} derive(Eq, Debug)
+}
 
 ///|
 /// The members of a body, in the order they were written.
@@ -21,12 +22,13 @@ pub(all) struct Block {
 /// which are data — `name = "web"` — and blocks, which are the format's own
 /// nesting — `server "web" { … }`. A reader that folded the two together would
 /// make `server { }` and `server = {}` the same document, and they are not.
+#derive(Eq, Debug)
 pub(all) struct Body {
   /// The attributes, in the order they were written.
   attributes : Array[(String, @moonconf.Node)]
   /// The blocks, in the order they were written.
   blocks : Array[Block]
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Body with Eq::{equal, not_equal}

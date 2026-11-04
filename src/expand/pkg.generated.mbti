@@ -31,27 +31,30 @@ pub fn Refused::to_string(Self) -> String
 pub impl Show for Refused
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct At {
   at : Int32
   line : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn At::equal(Self, Self) -> Bool
 pub fn At::not_equal(Self, Self) -> Bool
 pub fn At::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Knobs {
   unset : Unset
-} derive(Eq, @debug.Debug)
+}
 pub fn Knobs::equal(Self, Self) -> Bool
 pub fn Knobs::not_equal(Self, Self) -> Bool
 pub fn Knobs::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Unset {
   Fail
   Empty
   Keep
-} derive(Eq, @debug.Debug)
+}
 pub fn Unset::equal(Self, Self) -> Bool
 pub fn Unset::not_equal(Self, Self) -> Bool
 pub fn Unset::to_repr(Self) -> @debug.Repr

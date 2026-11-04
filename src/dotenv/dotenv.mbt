@@ -3,6 +3,7 @@
 
 ///|
 /// One assignment, with the place it was written.
+#derive(Eq, Debug)
 pub(all) struct Entry {
   /// The name.
   key : String
@@ -11,7 +12,7 @@ pub(all) struct Entry {
   value : String?
   /// Where the name starts.
   at : At
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Entry with Eq::{equal, not_equal}
@@ -26,12 +27,13 @@ pub extend Entry with Debug::{to_repr}
 /// that stops at the first one is a reader that leaves a program with no
 /// configuration. The line is kept here instead, so a caller can log it or fail
 /// on it, and the rest of the file still reads.
+#derive(Eq, Debug)
 pub(all) struct Skipped {
   /// The line as written, without its ending.
   text : String
   /// Where it starts.
   at : At
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Skipped with Eq::{equal, not_equal}
@@ -41,11 +43,12 @@ pub extend Skipped with Debug::{to_repr}
 
 ///|
 /// How to read a `.env` file.
+#derive(Eq, Debug)
 pub(all) struct Knobs {
   /// Whether `${A}` and `${A:-b}` are resolved against the entries above them.
   /// A bootstrap file for a program that reads its own variables wants this off.
   interpolate : Bool
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Knobs with Eq::{equal, not_equal}
@@ -67,12 +70,13 @@ pub let limit : Int32 = 1_048_576
 
 ///|
 /// A read file: the assignments, and the lines that were not ones.
+#derive(Eq, Debug)
 pub(all) struct Doc {
   /// The assignments, in file order, duplicates included.
   entries : Array[Entry]
   /// The lines that were not assignments, in file order.
   skipped : Array[Skipped]
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Doc with Eq::{equal, not_equal}

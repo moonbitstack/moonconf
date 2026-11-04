@@ -12,6 +12,7 @@
 /// A source that does not report positions — the JSON, YAML and TOML readers
 /// this package borrows keep the tree but not the offsets — fills in
 /// `{ at: 0, line: 1, column: 1 }`, and says so where it matters.
+#derive(Eq, Debug)
 pub(all) struct At {
   /// The offset in UTF-16 code units from the start of the source.
   at : Int32
@@ -19,7 +20,7 @@ pub(all) struct At {
   line : Int32
   /// The column the offset is at, counting from one.
   column : Int32
-} derive(Eq, Debug)
+}
 
 ///|
 /// The first position in a source: what to use when nothing better is known.

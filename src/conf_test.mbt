@@ -344,3 +344,17 @@ test "path: a mistyped value is refused with the path in the sentence" {
     _ => fail("text read as an integer should be refused")
   }
 }
+
+///|
+test "bind: a field with a byte layout binds as the kind inside it" {
+  let model = @moonmodel.Model::new("Server", [
+    @moonmodel.Field::new(
+      "port",
+      @moonmodel.Type::Wire(
+        @moonmodel.Layout::new(@moonmodel.Type::Int, bits=16, unsigned=true),
+      ),
+    ),
+  ])
+  let tree = map([("port", text("8080", "app.conf"))], "app.conf")
+  assert_eq(@moonconf.bind(tree, model), @json.parse("{\"port\":8080}"))
+}

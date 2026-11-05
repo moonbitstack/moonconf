@@ -193,6 +193,8 @@ fn as_json(
         wrong(node, "the value the model fixes", path)
       }
     @moonmodel.Any => native(node)
+    // A configuration is a document, and a document has no width or byte order.
+    @moonmodel.Wire(layout) => as_json(node, layout.kind, known, path, knobs)
   }
 }
 
@@ -260,6 +262,7 @@ fn shape(kind : @moonmodel.Type, known : Array[@moonmodel.Model]) -> String {
     @moonmodel.Nest(model) => model.name
     @moonmodel.Any => "any value"
     @moonmodel.Raw(_) => "the value the model fixes"
+    @moonmodel.Wire(layout) => shape(layout.kind, known)
   }
 }
 

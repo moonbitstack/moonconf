@@ -19,5 +19,9 @@ import {
 
 import {
   "moonbitlang/core/json",
+  "moonbitstack/moonconf/dotenv",
+  "moonbitstack/moonconf/expand",
+  "moonbitstack/moonconf/hocon",
+  "moonbitstack/moonconf/ini",
   "moonbitstack/moonmodel",
 } for "test"

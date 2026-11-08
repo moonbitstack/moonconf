@@ -289,8 +289,8 @@ test {
     ("port", @moonconf.Node::str("5432", "env")),
   ], "app.ini")
   assert_eq(
-    @moonconf.bind(tree, model),
-    @json.parse("{\"host\":\"localhost\",\"port\":5432,\"pool\":4}"),
+    @moonconf.bind(tree, model).stringify(),
+    "{\"host\":\"localhost\",\"port\":5432,\"pool\":4}",
   )
 }
 ```

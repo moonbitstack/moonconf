@@ -33,6 +33,6 @@ source = "src"
 import {
   "moonbitstack/moonmodel@0.1.3",
   "moonbitstack/moonyaml@0.1.4",
-  "moonbitstack/moontoml@0.1.1",
+  "moonbitstack/moontoml@0.1.2",
   "moonbitstack/moonjson@0.4.3",
 }

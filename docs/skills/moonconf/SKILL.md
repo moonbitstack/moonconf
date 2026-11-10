@@ -114,9 +114,11 @@ order of evaluation.
   path is absent; `need` refuses.
 - A list replaces as a whole, because a list in a configuration is one decision.
   Mappings merge: a later file that sets one key under `db` keeps the rest.
-- `clash` decides what a disagreement means — `Last` (the default), `First`, or
-  `Refuse`, which names both positions. `wins` is the tier order itself, so a
-  patch read *under* a document is a change of knobs rather than of code.
+- A value two layers set differently comes from the stronger layer by default.
+  `strict: true` makes it an error that names both positions; otherwise `clash`
+  decides, with moonknob's `Ignore`, `Warn(f)`, `Panic` or `Handle(f)`, and
+  `Handle(c => c.base)` keeps the weaker layer. `order` is the tier order itself,
+  so a patch read *under* a document is a change of knobs rather than of code.
 - `props.load` takes bytes as ISO-8859-1, one byte to one character; `parse` takes
   text. In properties a name is a name, not a path: `db.host` is one key.
 - A `.env` line that is not an assignment — a stray word, a quote that never

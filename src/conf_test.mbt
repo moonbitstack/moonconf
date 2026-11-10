@@ -60,8 +60,13 @@ test "merge: reversing the order lets the earlier layer win" {
   let base = map([("name", text("base", "base"))], "base")
   let patch = map([("name", text("patch", "patch"))], "patch")
   let reversed : @moonconf.Knobs = {
-    wins: [@moonconf.Override, @moonconf.Env, @moonconf.File, @moonconf.Default],
-    clash: @moonconf.Last,
+    ..@moonconf.layered,
+    order: [
+      @moonconf.Override,
+      @moonconf.Env,
+      @moonconf.File,
+      @moonconf.Default,
+    ],
   }
   let merged = @moonconf.merge(
     [
@@ -74,25 +79,16 @@ test "merge: reversing the order lets the earlier layer win" {
 }
 
 ///|
-test "merge: a clash can keep the first, keep the last, or refuse both" {
+test "merge: a clash can keep the last, keep the first, or be refused" {
   let a = map([("k", text("a", "a.conf"))], "a.conf")
   let b = map([("k", text("b", "b.conf"))], "b.conf")
   let sources = [
     @moonconf.Source::new(@moonconf.File, "a", a),
     @moonconf.Source::new(@moonconf.File, "b", b),
   ]
-  let both : @moonconf.Knobs = {
-    wins: [@moonconf.File],
-    clash: @moonconf.Last,
-  }
-  let early : @moonconf.Knobs = {
-    wins: [@moonconf.File],
-    clash: @moonconf.First,
-  }
-  let strict : @moonconf.Knobs = {
-    wins: [@moonconf.File],
-    clash: @moonconf.Refuse,
-  }
+  let both : @moonconf.Knobs = { ..@moonconf.layered, order: [@moonconf.File], }
+  let early : @moonconf.Knobs = { ..both, clash: Handle(clash => clash.base), }
+  let strict : @moonconf.Knobs = { ..both, strict: true, }
   let last = @moonconf.merge(sources, knobs=both)
   let first = @moonconf.merge(sources, knobs=early)
   assert_eq(last.need_text("k"), "b")
@@ -106,8 +102,52 @@ test "merge: a clash can keep the first, keep the last, or refuse both" {
       assert_eq(first, "a.conf@1:1")
       assert_eq(second, "b.conf@1:1")
     }
-    _ => fail("a clash under Refuse should be reported")
+    _ => fail("a clash under strict should be reported")
   }
+}
+
+///|
+test "merge: a clash can be reported and still taken from the stronger layer" {
+  let a = map(
+    [("db", map([("port", text("5432", "a.conf"))], "a.conf"))],
+    "a.conf",
+  )
+  let b = map(
+    [("db", map([("port", text("6432", "b.conf"))], "b.conf"))],
+    "b.conf",
+  )
+  let said : Array[String] = []
+  let knobs : @moonconf.Knobs = {
+    ..@moonconf.layered,
+    clash: Warn(line => said.push(line)),
+  }
+  let merged = @moonconf.merge(
+    [
+      @moonconf.Source::new(@moonconf.File, "a", a),
+      @moonconf.Source::new(@moonconf.Env, "b", b),
+    ],
+    knobs~,
+  )
+  assert_eq(merged.need_text("db.port"), "6432")
+  assert_eq(said, [
+    "moonconf: a.conf@1:1 and b.conf@1:1: db.port given twice with different values",
+  ])
+}
+
+///|
+test "panic merge: clash=Panic aborts on a value two layers set differently" {
+  let a = map([("k", text("a", "a.conf"))], "a.conf")
+  let b = map([("k", text("b", "b.conf"))], "b.conf")
+  let knobs : @moonconf.Knobs = { ..@moonconf.layered, clash: Panic, }
+  ignore(
+    @moonconf.merge(
+      [
+        @moonconf.Source::new(@moonconf.File, "a", a),
+        @moonconf.Source::new(@moonconf.File, "b", b),
+      ],
+      knobs~,
+    ),
+  )
 }
 
 ///|
@@ -134,8 +174,9 @@ test "merge: identical values from two layers are not a clash" {
   let a = map([("k", text("same", "a"))], "a")
   let b = map([("k", text("same", "b"))], "b")
   let strict : @moonconf.Knobs = {
-    wins: [@moonconf.File],
-    clash: @moonconf.Refuse,
+    ..@moonconf.layered,
+    order: [@moonconf.File],
+    strict: true,
   }
   let merged = @moonconf.merge(
     [

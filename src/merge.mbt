@@ -22,38 +22,33 @@ pub(all) enum Tier {
 }
 
 ///|
-/// What to do when two layers name the same value and disagree.
-#derive(Eq, Debug)
-pub(all) enum Clash {
-  /// The stronger layer wins, silently. What everybody does.
-  Last
-  /// The weaker layer wins. For a caller layering a patch *under* a document.
-  First
-  /// Two layers naming the same value is an error. For a configuration where
-  /// an accidental override is a bug.
-  Refuse
-}
-
-///|
-/// How to merge: which tier is stronger, and what a disagreement means.
+/// How to merge: the order of the tiers, and what two layers that disagree mean.
 ///
-/// `wins` runs from the weakest tier to the strongest, and a tier left out of it
-/// sorts below every tier in it, in the order the sources were given. Putting the
-/// tiers in a different order is how a caller reverses the direction of the
-/// whole stack — an overlay read after the base file, say — without touching any
-/// parser.
-#derive(Eq, Debug)
+/// `order` runs from the weakest tier to the strongest, and a tier left out of
+/// it sorts below every tier in it, in the order the sources were given.
+/// Putting the tiers in a different order is how a caller reverses the whole
+/// stack, an overlay read after the base file say, without touching any parser.
 pub(all) struct Knobs {
   /// Tiers from weakest to strongest: the last one wins.
-  wins : Array[Tier]
-  /// What a disagreement means.
-  clash : Clash
+  order : Array[Tier]
+  /// What a value set differently by two layers means to the program: taken
+  /// from the stronger layer silently or with a warning, aborted on, or decided
+  /// by the caller's function. `moonknob`'s, as in every library of the family.
+  clash : @moonknob.OnClash[Node]
+  /// Whether such a value is an error in the configuration itself, raised as
+  /// `Clash` with both positions, for a deployment where an accidental override
+  /// is a bug. Checked before `clash`.
+  strict : Bool
 }
 
 ///|
 /// Defaults below files below the environment below explicit overrides, with
-/// the stronger layer winning.
-pub let layered : Knobs = { wins: [Default, File, Env, Override], clash: Last, }
+/// the stronger layer winning silently.
+pub let layered : Knobs = {
+  order: [Default, File, Env, Override],
+  clash: Ignore,
+  strict: false,
+}
 
 ///|
 /// One layer of a configuration: a tree, the tier it belongs to, and the name
@@ -78,8 +73,8 @@ pub fn Source::new(tier : Tier, name : String, node : Node) -> Source {
 /// The rank of a tier under `knobs`, lowest first.
 fn rank(tier : Tier, knobs : Knobs) -> Int32 {
   let mut i = 0
-  while i < knobs.wins.length() {
-    if knobs.wins[i] == tier {
+  while i < knobs.order.length() {
+    if knobs.order[i] == tier {
       return i
     }
     i += 1
@@ -88,18 +83,19 @@ fn rank(tier : Tier, knobs : Knobs) -> Int32 {
 }
 
 ///|
-/// Merge two trees. `over` is the stronger one; the policy decides what happens
-/// where they disagree.
+/// Merge two trees. `over` is the stronger one; `strict` and `clash` decide
+/// what happens where they disagree, as in [`Knobs`].
 ///
 /// Mappings merge member by member, so a later file that sets one key under
 /// `db` keeps the rest of the earlier file's `db`. Lists replace rather than
-/// concatenate: a list in a configuration is nearly always one decision —
-/// which hosts, which plugins — and appending the two decisions together gives
-/// a value nobody wrote.
+/// concatenate: a list in a configuration is nearly always one decision,
+/// which hosts or which plugins, and appending two decisions gives a value
+/// nobody wrote.
 pub fn Node::merge(
   self : Node,
   over : Node,
-  clash~ : Clash = Last,
+  clash~ : @moonknob.OnClash[Node] = Ignore,
+  strict~ : Bool = false,
   path~ : String = "",
 ) -> Node raise Refused {
   let base = self
@@ -111,27 +107,23 @@ pub fn Node::merge(
         let child = if path == "" { key } else { path + "." + key }
         match out.get(key) {
           Some(before) =>
-            out.set(key, before.merge(entry.1, clash~, path=child))
+            out.set(key, before.merge(entry.1, clash~, strict~, path=child))
           None => out.set(key, entry.1.copy())
         }
       }
       { value: Map(out), source: over.source, at: over.at, }
     }
-    (_, _) =>
+    (_, _) => {
       if base.value == over.value {
-        base
-      } else {
-        match clash {
-          Last => over
-          First => base
-          Refuse =>
-            raise Clash(
-              path~,
-              first=spot(base.source, base.at),
-              second=spot(over.source, over.at),
-            )
-        }
+        return base
       }
+      let first = spot(base.source, base.at)
+      let second = spot(over.source, over.at)
+      if strict {
+        raise Clash(path~, first~, second~)
+      }
+      clash.settle(base, over, [path], "moonconf: \{first} and \{second}")
+    }
   }
 }
 
@@ -164,7 +156,7 @@ pub fn merge(sources : Array[Source], knobs? : Knobs) -> Node raise Refused {
   let empty = { value: Map(Table::new()), source: "", at: start, }
   let mut acc = empty
   for entry in ranked {
-    acc = acc.merge(entry.2.node, clash=knobs.clash)
+    acc = acc.merge(entry.2.node, clash=knobs.clash, strict=knobs.strict)
   }
   acc
 }
@@ -174,18 +166,6 @@ pub extend Tier with Eq::{equal, not_equal}
 
 ///|
 pub extend Tier with Debug::{to_repr}
-
-///|
-pub extend Clash with Eq::{equal, not_equal}
-
-///|
-pub extend Clash with Debug::{to_repr}
-
-///|
-pub extend Knobs with Eq::{equal, not_equal}
-
-///|
-pub extend Knobs with Debug::{to_repr}
 
 ///|
 pub extend Source with Eq::{equal, not_equal}

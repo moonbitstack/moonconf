@@ -18,6 +18,7 @@ import {
   "moonbitstack/moonconf/hocon",
   "moonbitstack/moonconf/ini",
   "moonbitstack/moonconf/props",
+  "moonbitstack/moonknob",
   "moonbitstack/moonmodel",
   "moonbitlang/core/json",
 }

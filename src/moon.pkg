@@ -12,6 +12,7 @@
 import {
   "moonbitlang/core/string",
   "moonbitstack/moonjson",
+  "moonbitstack/moonknob",
   "moonbitstack/moonmodel",
   "moonbitstack/moontoml",
   "moonbitstack/moonyaml",

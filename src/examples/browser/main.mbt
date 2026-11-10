@@ -144,14 +144,16 @@ fn sources_of(
 }
 
 ///|
-/// The merge switches a request names.
+/// The merge switches a request names. The page's three policies are the
+/// stronger layer, the weaker one, and a refusal with both positions.
 fn knobs_of(request : Json) -> @moonconf.Knobs {
-  let clash = match as_text(request, "clash") {
-    "first" => @moonconf.First
-    "refuse" => @moonconf.Refuse
-    _ => @moonconf.Last
+  let policy = as_text(request, "clash")
+  let clash : @moonknob.OnClash[@moonconf.Node] = if policy == "first" {
+    Handle(clash => clash.base)
+  } else {
+    Ignore
   }
-  let wins = match field_of(request, "wins") {
+  let order = match field_of(request, "wins") {
     Some(Array(items)) => {
       let tiers : Array[@moonconf.Tier] = []
       for item in items {
@@ -162,9 +164,9 @@ fn knobs_of(request : Json) -> @moonconf.Knobs {
       }
       tiers
     }
-    _ => @moonconf.layered.wins
+    _ => @moonconf.layered.order
   }
-  { wins, clash, }
+  { order, clash, strict: policy == "refuse", }
 }
 
 ///|

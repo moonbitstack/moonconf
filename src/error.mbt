@@ -25,7 +25,7 @@ pub(all) suberror Refused {
   Missing(path~ : String, want~ : String)
   /// A member no field of the model describes, under a closed binding.
   Unknown(path~ : String, got~ : String)
-  /// Two layers carried the same scalar and the clash policy refused both.
+  /// Two layers set one value differently, under a `strict` merge.
   Clash(path~ : String, first~ : String, second~ : String)
   /// A path that does not parse: an empty segment, a stray dot.
   Path(got~ : String, at~ : Int32)

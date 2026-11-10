@@ -84,14 +84,17 @@ test {
 }
 ```
 
-- The tiers run `Default`, `File`, `Env`, `Override`. The `wins` field of
+- The tiers run `Default`, `File`, `Env`, `Override`. The `order` field of
   `Knobs` lists them weakest first, so the stack can be reversed — a patch read
   *under* a document — without touching a parser.
 - Mappings merge member by member: a later file that sets one key under `db`
   keeps the rest of the earlier file's `db`. Lists replace, because a list is one
   decision.
-- A disagreement is `Clash::Last` (the default), `Clash::First`, or
-  `Clash::Refuse`, which reports both positions.
+- A value two layers set differently is taken from the stronger one by
+  default. `strict: true` makes it an error that names both positions; otherwise
+  `clash` decides, with [moonknob](https://github.com/moonbitstack/moonknob)'s
+  tiers: `Ignore`, `Warn(f)` for one line about it, `Panic`, or `Handle(f)`,
+  where `Handle(c => c.base)` keeps the weaker layer.
 
 ## Formats
 
@@ -323,7 +326,7 @@ db.port (env@1:1): want integer, got text
 | Function | Meaning |
 |:--|:--|
 | `merge(sources, knobs?)` | Merge layers into one tree |
-| `Node::merge(base, over, clash?=Last)` | Merge two trees |
+| `Node::merge(base, over, clash?, strict?)` | Merge two trees |
 | `Node::find(path)` / `need(path)` | The value at a dotted path |
 | `Node::need_text/int/bool/real/list/table(path)` | The value, as a type |
 | `bind(node, model, known?, knobs?)` | Check against a model, as JSON |

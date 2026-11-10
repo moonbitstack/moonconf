@@ -427,8 +427,9 @@ println(merged.need_text("db.port"))   // 6432</pre>
 
           <p>
             The sources were given in any order; <code>merge</code> sorted them by
-            tier. <code>clash</code> says what a disagreement means, and
-            <code>wins</code> is the tier order itself, so reversing the stack is
+            tier. <code>strict</code> makes a disagreement an error,
+            <code>clash</code> otherwise says what it means, and
+            <code>order</code> is the tier order itself, so reversing the stack is
             a change of knobs rather than of code.
           </p>
 
@@ -448,18 +449,15 @@ let sources = [
   @moonconf.Source::new(@moonconf.Env, "env", env),
 ]
 
-let strict : @moonconf.Knobs = {
-  wins: [@moonconf.Default, @moonconf.Env],
-  clash: @moonconf.Refuse,
-}
+let strict : @moonconf.Knobs = { ..@moonconf.layered, strict: true }
 match (try Ok(@moonconf.merge(sources, knobs=strict)) catch { e => Err(e) }) {
   Err(e) => println(e)   // names both places
   Ok(_) => println("merged")
 }
 
 let reversed : @moonconf.Knobs = {
-  wins: [@moonconf.Env, @moonconf.Default],
-  clash: @moonconf.Last,
+  ..@moonconf.layered,
+  order: [@moonconf.Env, @moonconf.Default],
 }
 println(@moonconf.merge(sources, knobs=reversed).need_text("db.host"))</pre>
           </div>
@@ -628,7 +626,7 @@ url   -&gt; http://localhost:8080/</pre>
               <tr><td>presets</td><td><code>strict</code>, <code>lenient</code>, <code>deferred</code>.</td></tr>
               <tr><td><code>dotenv</code></td><td><code>interpolate</code></td><td>Whether `${…}` is resolved; presets <code>interpolated</code> and <code>verbatim</code>.</td></tr>
               <tr><td><code>hocon</code></td><td><code>read</code> · <code>fallback</code> · <code>depth</code></td><td>Where an include comes from, where an unknown name is looked up, how deep nesting may go.</td></tr>
-              <tr><td><code>merge</code></td><td><code>wins</code> · <code>clash</code></td><td>The tier order, and <code>Last</code>, <code>First</code>, <code>Refuse</code>.</td></tr>
+              <tr><td><code>merge</code></td><td><code>order</code> · <code>clash</code> · <code>strict</code></td><td>The tier order; <code>Ignore</code>, <code>Warn</code>, <code>Panic</code> or <code>Handle</code> for a disagreement; or an error that names both positions.</td></tr>
               <tr><td><code>bind</code></td><td><code>extra</code></td><td><code>Allow</code> or <code>Refuse</code> a member the model does not describe.</td></tr>
             </tbody>
           </table>

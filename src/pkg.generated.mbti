@@ -4,6 +4,7 @@ package "moonbitstack/moonconf"
 import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
+  "moonbitstack/moonknob",
   "moonbitstack/moonmodel",
 }
 
@@ -73,16 +74,6 @@ pub fn Bind::not_equal(Self, Self) -> Bool
 pub fn Bind::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
-pub(all) enum Clash {
-  Last
-  First
-  Refuse
-}
-pub fn Clash::equal(Self, Self) -> Bool
-pub fn Clash::not_equal(Self, Self) -> Bool
-pub fn Clash::to_repr(Self) -> @debug.Repr
-
-#derive(Eq, @debug.Debug)
 pub(all) enum Extra {
   Allow
   Refuse
@@ -91,14 +82,11 @@ pub fn Extra::equal(Self, Self) -> Bool
 pub fn Extra::not_equal(Self, Self) -> Bool
 pub fn Extra::to_repr(Self) -> @debug.Repr
 
-#derive(Eq, @debug.Debug)
 pub(all) struct Knobs {
-  wins : Array[Tier]
-  clash : Clash
+  order : Array[Tier]
+  clash : @moonknob.OnClash[Node]
+  strict : Bool
 }
-pub fn Knobs::equal(Self, Self) -> Bool
-pub fn Knobs::not_equal(Self, Self) -> Bool
-pub fn Knobs::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
 pub(all) struct Node {
@@ -119,7 +107,7 @@ pub fn Node::is_map(Self) -> Bool
 pub fn Node::kind(Self) -> String
 pub fn Node::list(Self) -> Array[Self] raise Refused
 pub fn Node::map(Array[(String, Self)], String, at? : At) -> Self
-pub fn Node::merge(Self, Self, clash? : Clash, path? : String) -> Self raise Refused
+pub fn Node::merge(Self, Self, clash? : @moonknob.OnClash[Self], strict? : Bool, path? : String) -> Self raise Refused
 pub fn Node::need(Self, String) -> Self raise Refused
 pub fn Node::need_bool(Self, String) -> Bool raise Refused
 pub fn Node::need_int(Self, String) -> Int64 raise Refused

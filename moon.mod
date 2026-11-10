@@ -35,4 +35,5 @@ import {
   "moonbitstack/moonyaml@0.1.6",
   "moonbitstack/moontoml@0.1.3",
   "moonbitstack/moonjson@0.4.4",
+  "moonbitstack/moonknob@0.1.0",
 }

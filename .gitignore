@@ -5,3 +5,4 @@ _*
 target/
 
 docs/assets/moonconf.js
+Cargo.lock

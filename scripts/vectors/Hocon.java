@@ -16,9 +16,12 @@
 // while this library keeps the form it was written in, so `1.0` is a real.
 // Those cases assert the form written, and carry a comment saying so.
 //
-// Run from the repository root, with the reference jar downloaded beside it:
+// Run from the repository root, with the reference jar downloaded somewhere
+// outside the repository, and the formatter after it -- the assertions are
+// written as they are built, and the line breaks are `moon fmt`'s:
 //   curl -O https://repo1.maven.org/maven2/com/typesafe/config/1.4.3/config-1.4.3.jar
 //   java --class-path config-1.4.3.jar scripts/vectors/Hocon.java
+//   moon fmt
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
@@ -28,10 +31,12 @@ import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueType;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -215,7 +220,20 @@ public class Hocon {
         }
         Path main = dir.resolve("main.conf");
         Files.writeString(main, one.text(), StandardCharsets.UTF_8);
-        return ConfigFactory.parseFile(main.toFile()).resolve();
+        try {
+            return ConfigFactory.parseFile(main.toFile()).resolve();
+        } finally {
+            remove(dir);
+        }
+    }
+
+    /** Take a case's temporary directory away, so a run leaves nothing behind. */
+    static void remove(Path dir) throws IOException {
+        try (var entries = Files.walk(dir)) {
+            for (Path one : entries.sorted(Comparator.reverseOrder()).toList()) {
+                Files.deleteIfExists(one);
+            }
+        }
     }
 
     static void emit() throws Exception {

@@ -399,3 +399,12 @@ test "bind: a field with a byte layout binds as the kind inside it" {
   let tree = map([("port", text("8080", "app.conf"))], "app.conf")
   assert_eq(@moonconf.bind(tree, model), @json.parse("{\"port\":8080}"))
 }
+
+///|
+test "bind: an integer in the tree binds as a number, not as its text" {
+  let model = @moonmodel.Model::new("Server", [
+    @moonmodel.Field::new("port", @moonmodel.Type::Int, required=true),
+  ])
+  let tree = map([("port", @moonconf.Node::num(8080L, "app.conf"))], "app.conf")
+  assert_eq(@moonconf.bind(tree, model), @json.parse("{\"port\":8080}"))
+}

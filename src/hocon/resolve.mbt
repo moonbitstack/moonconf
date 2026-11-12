@@ -78,6 +78,14 @@ fn step(raw : Raw, part : String) -> Raw? {
       }
       found
     }
+    // A definition that may be absent does not hide what it overrode: the path
+    // reaches into the newer value when it has the member, and into the older
+    // one when it does not.
+    Fallback(primary, back) =>
+      match step(primary.raw, part) {
+        Some(next) => Some(next)
+        None => step(back.raw, part)
+      }
     _ => None
   }
 }
@@ -144,6 +152,11 @@ fn Res::resolve(
       Some(@moonconf.Node::new(@moonconf.Value::Map(table), self.source, at))
     }
     Concat(items) => self.join(items, path, at)
+    Fallback(primary, back) =>
+      match self.resolve(primary, path) {
+        Some(node) => Some(node)
+        None => self.resolve(back, path)
+      }
     Ref(target, optional) => {
       if self.busy(target) {
         raise Cycle(path=target)
@@ -301,7 +314,7 @@ fn scalar(node : @moonconf.Node) -> String {
 /// configuration language rather than a data format:
 ///
 /// - **Merging.** The same name twice merges its values: objects member by
-///   member, arrays end to end, and anything else keeps the later one.
+///   member, and anything else — an array included — keeps the later one.
 /// - **References.** `${a.b}` is the value at that path; `${?a.b}` is that value
 ///   when it is there and nothing at all when it is not.
 /// - **Includes.** `include "name"` asks `knobs.read` for the text, which is how

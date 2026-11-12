@@ -32,11 +32,21 @@ test "hocon: the same name twice merges what it holds" {
 }
 
 ///|
-test "hocon: arrays written twice join end to end" {
+test "hocon: a second array replaces the first" {
   let doc = @hocon.parse("hosts = [a]\nhosts = [b, c]\n")
   let hosts = doc.need("hosts").list()
-  assert_eq(hosts.length(), 3)
-  assert_eq(hosts[2].text(), "c")
+  assert_eq(hosts.length(), 2)
+  assert_eq(hosts[1].text(), "c")
+}
+
+///|
+test "hocon: an array is extended by naming it" {
+  let doc = @hocon.parse("hosts = [a]\nhosts = ${hosts} [b, c]\n")
+  let names = []
+  for item in doc.need("hosts").list() {
+    names.push(item.text())
+  }
+  assert_eq(names, ["a", "b", "c"])
 }
 
 ///|
@@ -230,4 +240,16 @@ test "hocon: an include leaves the environment fallback in place" {
   let doc = @hocon.parse("a = ${MOONCONF_ENV_PROBE}\n", knobs~)
   @env.unset_env_var("MOONCONF_ENV_PROBE")
   assert_eq(doc.need_text("a"), "from-env")
+}
+
+///|
+test "hocon: a number keeps the form it was written in" {
+  // The reference implementation folds a number written with a fraction into an
+  // integer, because its number is JSON's single number type. This library keeps
+  // `1.0` a real, so binding it to an integer field is refused rather than
+  // quietly truncated.
+  let doc = @hocon.parse("a = 1.0\nb = 2.0e2\n")
+  assert_eq(doc.need("a").kind(), "real")
+  assert_eq(doc.need("a").real(), 1.0)
+  assert_eq(doc.need("b").real(), 200.0)
 }

@@ -151,7 +151,7 @@
 <p>A name the document does not define is looked up in the environment, which is how <code>path = ${HOME}/bin</code> works without the caller arranging anything. On a target with no environment the lookup answers nothing, so the same document reads the same way everywhere it can.</p></article><article class="api-item" id="hocon-parse"><h3>parse</h3><code class="api-signature">pub fn parse(StringView, knobs? : Knobs, source? : String) -&gt; @moonconf.Node raise Refused</code><p>Read a HOCON document.</p>
 <p>The syntax is JSON's with the punctuation relaxed — no commas needed, no quotes around a word that has no punctuation in it, <code>=</code> or <code>:</code> before a value, <code>#</code> or <code>//</code> starting a comment — plus the three things that make it a configuration language rather than a data format:</p>
 <ul><li><strong>Merging.</strong> The same name twice merges its values: objects member by</li></ul>
-<p>member, arrays end to end, and anything else keeps the later one.</p>
+<p>member, and anything else — an array included — keeps the later one.</p>
 <ul><li><strong>References.</strong> <code>${a.b}</code> is the value at that path; <code>${?a.b}</code> is that value</li></ul>
 <p>when it is there and nothing at all when it is not.</p>
 <ul><li><strong>Includes.</strong> <code>include "name"</code> asks <code>knobs.read</code> for the text, which is how</li></ul>

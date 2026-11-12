@@ -15,6 +15,10 @@ priv enum Raw {
   /// Whitespace between two values that were written next to each other, kept
   /// so that joining text joins it as it was written.
   Space
+  /// A definition written over one that was already there, where the new value
+  /// may turn out to be absent: the new one when it finds something, and the one
+  /// it overrode when it does not. `b = 1` then `b = ${?nope}` leaves `b` at 1.
+  Fallback(Item, Item)
 }
 
 ///|
@@ -128,11 +132,25 @@ fn Parser::string(self : Parser) -> String raise Refused {
       if self.i >= self.src.length() {
         raise Unclosed(at=self.spot(start), got="\"\"\"")
       }
-      if self.here() == '"'.to_int() &&
-        self.at(self.i + 1) == '"'.to_int() &&
-        self.at(self.i + 2) == '"'.to_int() {
-        self.i += 3
-        return out.to_string()
+      if self.here() == '"'.to_int() {
+        // A run of quotes closes the string at its last three; the ones before
+        // those were written inside it, so `"""x""""` is `x"`.
+        let mut run = 0
+        while self.at(self.i + run) == '"'.to_int() {
+          run += 1
+        }
+        if run >= 3 {
+          for _ in 0..<(run - 3) {
+            out.write_char('"')
+          }
+          self.i += run
+          return out.to_string()
+        }
+        for _ in 0..<run {
+          out.write_char('"')
+        }
+        self.i += run
+        continue
       }
       out.write_char(self.here().unsafe_to_char())
       self.i += 1
@@ -203,12 +221,22 @@ fn hex(c : Int32) -> Int32? {
 
 ///|
 /// A key, as the segments its dots divide it into.
+///
+/// A key is a path expression, and a path expression is a value concatenation,
+/// so `a b = 1` names one segment spelled `a b` while `a.b` names two. The
+/// whitespace between two words of a segment is the whitespace that was written
+/// there: `a  b` and `a b` are two different names.
 fn Parser::key(self : Parser) -> Array[String] raise Refused {
   let parts = []
+  let segment : Array[String] = []
   while true {
-    self.idle()
-    if self.here() == '"'.to_int() {
-      parts.push(self.string())
+    let gap_start = self.i
+    while is_space(self.here()) {
+      self.i += 1
+    }
+    let gap = self.src[gap_start:self.i].to_owned()
+    let token = if self.here() == '"'.to_int() {
+      self.string()
     } else {
       let start = self.i
       while self.here() != -1 && !is_key_end(self.here()) {
@@ -217,18 +245,32 @@ fn Parser::key(self : Parser) -> Array[String] raise Refused {
       if self.i == start {
         raise Unexpected(at=self.spot(self.i), got=self.describe_here())
       }
-      parts.push(self.src[start:self.i].to_owned())
+      self.src[start:self.i].to_owned()
     }
-    // A dot glues the next segment on.
+    if !segment.is_empty() {
+      segment.push(gap)
+    }
+    segment.push(token)
+    // A dot starts the next segment; anything else that ends a key ends it.
     let mut probe = self.i
     while probe < self.src.length() && is_space(self.src.at(probe).to_int()) {
       probe += 1
     }
-    if probe < self.src.length() && self.src.at(probe).to_int() == '.'.to_int() {
+    let next = if probe < self.src.length() {
+      self.src.at(probe).to_int()
+    } else {
+      -1
+    }
+    if next == '.'.to_int() {
+      parts.push(segment.join(""))
+      segment.clear()
       self.i = probe + 1
       continue
     }
-    return parts
+    if next == -1 || is_key_end(next) {
+      parts.push(segment.join(""))
+      return parts
+    }
   }
   parts
 }
@@ -242,6 +284,18 @@ fn Parser::describe_here(self : Parser) -> String {
     "a line ending"
   } else {
     c.unsafe_to_char().to_string()
+  }
+}
+
+///|
+/// Whether this value may resolve to nothing at all: an optional reference, or a
+/// run of values one of which is one.
+fn maybe_absent(item : Item) -> Bool {
+  match item.raw {
+    Ref(_, optional) => optional
+    Concat(items) => items.any(fn(child) { maybe_absent(child) })
+    Fallback(_, _) => true
+    _ => false
   }
 }
 
@@ -273,14 +327,20 @@ fn insert(
       // builds on what it overrides work at all.
       let full = path[0:index + 1].join(".")
       let bound = rebind(value, full, before.raw)
-      if append {
-        pairs[found] = (key, { raw: appended(before, bound), at: before.at, })
+      let next = if append {
+        { raw: appended(before, bound), at: before.at, }
       } else {
-        pairs[found] = (
-          key,
-          { raw: merged(before.raw, bound.raw), at: before.at, },
-        )
+        { raw: merged(before.raw, bound.raw), at: before.at, }
       }
+      // A value that may find nothing keeps what it overrode: the format says an
+      // optional reference that resolves to nothing contributes nothing, so the
+      // earlier definition is still the answer.
+      let raw = if maybe_absent(bound) {
+        Fallback(next, before)
+      } else {
+        next.raw
+      }
+      pairs[found] = (key, { raw, at: before.at, })
     } else if append {
       pairs.push((key, { raw: Arr([value]), at: value.at, }))
     } else {
@@ -342,6 +402,14 @@ fn rebind(item : Item, path : String, previous : Raw) -> Item {
         raw: Concat(items.map(fn(child) { rebind(child, path, previous) })),
         at: item.at,
       }
+    Fallback(primary, back) =>
+      {
+        raw: Fallback(
+          rebind(primary, path, previous),
+          rebind(back, path, previous),
+        ),
+        at: item.at,
+      }
     _ => item
   }
 }
@@ -360,8 +428,12 @@ fn appended(before : Item, value : Item) -> Raw {
 }
 
 ///|
-/// Two values written under the same name: objects merge, arrays join, and
-/// anything else keeps the later one, which is what `HOCON` means by merge.
+/// Two values written under the same name: objects merge member by member, and
+/// anything else — an array included — keeps the later one.
+///
+/// An array is one decision, so a second `a = [...]` replaces the first rather
+/// than extending it. Extending is written as `${a} [ ... ]`, which is a value
+/// that refers to what it overrides, or as `a += ...`.
 fn merged(a : Raw, b : Raw) -> Raw {
   match (a, b) {
     (Obj(left), Obj(right)) => {
@@ -385,13 +457,6 @@ fn merged(a : Raw, b : Raw) -> Raw {
         }
       }
       Obj(out)
-    }
-    (Arr(left), Arr(right)) => {
-      let out = left.copy()
-      for item in right {
-        out.push(item)
-      }
-      Arr(out)
     }
     (_, _) => b
   }

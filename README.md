@@ -214,8 +214,9 @@ test {
 }
 ```
 
-- The same name twice merges: objects member by member, arrays end to end, and
-  anything else keeps the later one.
+- The same name twice merges: objects member by member, and anything else — an
+  array included — keeps the later one. An array is one decision, so extending
+  one is written `a = ${a} [ … ]` or `a += …`.
 - `${a.b}` is the value at that path; `${?a.b}` is that value when it is there
   and nothing at all when it is not, so a field that depends on an unset name
   simply is not there.

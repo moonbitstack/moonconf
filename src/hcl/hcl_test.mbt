@@ -231,3 +231,19 @@ test "hcl: a for without grouping keeps the last value of a repeated key" {
   let table = body.get("last").unwrap().table()
   assert_eq(table.get("a").unwrap().int(), 2L)
 }
+
+///|
+test "hcl: a number keeps the form it was written in" {
+  let body = @hcl.parse("a = 1.0\nb = 2e2\n")
+  assert_eq(body.get("a").unwrap().kind(), "real")
+  assert_eq(body.get("a").unwrap().real(), 1.0)
+  assert_eq(body.get("b").unwrap().real(), 200.0)
+}
+
+///|
+test "hcl: what arithmetic lands on decides the kind of the answer" {
+  let body = @hcl.parse("a = 4 / 2\nb = 7 / 2\nc = 1.5 * 2\n")
+  assert_eq(body.get("a").unwrap().kind(), "integer")
+  assert_eq(body.get("b").unwrap().kind(), "real")
+  assert_eq(body.get("c").unwrap().kind(), "integer")
+}

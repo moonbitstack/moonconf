@@ -223,6 +223,24 @@ fn P::quoted(self : P) -> String raise Refused {
     }
     if c == '\\'.to_int() {
       let next = self.at(self.i + 1)
+      // `\u` and `\U` name a character by its code point; the rest name one by
+      // its own letter.
+      if next == 'u'.to_int() || next == 'U'.to_int() {
+        let digits = if next == 'u'.to_int() { 4 } else { 8 }
+        let mut value = 0
+        let mut k = 0
+        while k < digits {
+          let digit = hex_at(self.at(self.i + 2 + k))
+          match digit {
+            Some(digit) => value = value * 16 + digit
+            None => raise self.error(self.i + 2 + k)
+          }
+          k += 1
+        }
+        raw.write_char(value.unsafe_to_char())
+        self.i += 2 + digits
+        continue
+      }
       let decoded = match next {
         0x6E => '\n'
         0x74 => '\t'
@@ -240,6 +258,20 @@ fn P::quoted(self : P) -> String raise Refused {
     self.i += 1
   }
   raw.to_string()
+}
+
+///|
+/// A digit of a hexadecimal escape, or nothing.
+fn hex_at(c : Int32) -> Int32? {
+  if c >= '0'.to_int() && c <= '9'.to_int() {
+    Some(c - '0'.to_int())
+  } else if c >= 'a'.to_int() && c <= 'f'.to_int() {
+    Some(c - 'a'.to_int() + 10)
+  } else if c >= 'A'.to_int() && c <= 'F'.to_int() {
+    Some(c - 'A'.to_int() + 10)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -440,11 +472,12 @@ fn arithmetic(
         "+" => @moonconf.Node::num(a + b, "", at=root_at(at))
         "-" => @moonconf.Node::num(a - b, "", at=root_at(at))
         "*" => @moonconf.Node::num(a * b, "", at=root_at(at))
+        // A quotient is a number, not a whole number of them: `7 / 2` is 3.5.
         "/" =>
           if b == 0L {
             raise BadOperation(why="a division by zero", at~)
           } else {
-            @moonconf.Node::num(a / b, "", at=root_at(at))
+            computed(a.to_double() / b.to_double(), at)
           }
         _ =>
           if b == 0L {
@@ -457,23 +490,37 @@ fn arithmetic(
       let a = number(left, at)
       let b = number(right, at)
       match op {
-        "+" => @moonconf.Node::of_real(a + b, "", at=root_at(at))
-        "-" => @moonconf.Node::of_real(a - b, "", at=root_at(at))
-        "*" => @moonconf.Node::of_real(a * b, "", at=root_at(at))
+        "+" => computed(a + b, at)
+        "-" => computed(a - b, at)
+        "*" => computed(a * b, at)
         "/" =>
           if b == 0.0 {
             raise BadOperation(why="a division by zero", at~)
           } else {
-            @moonconf.Node::of_real(a / b, "", at=root_at(at))
+            computed(a / b, at)
           }
         _ =>
           if b == 0.0 {
             raise BadOperation(why="a division by zero", at~)
           } else {
-            @moonconf.Node::of_real(a % b, "", at=root_at(at))
+            computed(a % b, at)
           }
       }
     }
+  }
+}
+
+///|
+/// A number that arithmetic produced: an integer when it lands on one, because
+/// `4 / 2` and `1.5 * 2` are whole, and a real otherwise.
+fn computed(value : Double, at : At) -> @moonconf.Node {
+  let whole = value.trunc()
+  if value == whole &&
+    value > -9.007_199_254_740_992e15 &&
+    value < 9.007_199_254_740_992e15 {
+    @moonconf.Node::num(whole.to_int64(), "", at=root_at(at))
+  } else {
+    @moonconf.Node::of_real(value, "", at=root_at(at))
   }
 }
 

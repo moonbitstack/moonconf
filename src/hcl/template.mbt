@@ -189,12 +189,13 @@ fn TParser::nodes(self : TParser, stops : Array[String]) -> Piece raise Refused 
         None => raise Unclosed(at=self.at, got="${")
       }
       let (body, left, right) = self.body(self.i + 2, close)
-      if left {
-        trim_tail(out)
-      }
       if !text.is_empty() {
         out.push(Lit(text.to_string()))
         text.reset()
+      }
+      // The text written so far is what a `~` on the left takes the whitespace of.
+      if left {
+        trim_tail(out)
       }
       out.push(Hole(body))
       self.i = close + 1
@@ -211,12 +212,12 @@ fn TParser::nodes(self : TParser, stops : Array[String]) -> Piece raise Refused 
         None => raise Unclosed(at=self.at, got="%{")
       }
       let (body, left, right) = self.body(self.i + 2, close)
-      if left {
-        trim_tail(out)
-      }
       if !text.is_empty() {
         out.push(Lit(text.to_string()))
         text.reset()
+      }
+      if left {
+        trim_tail(out)
       }
       self.i = close + 1
       if right {

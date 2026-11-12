@@ -1,0 +1,11 @@
+// The documents this library writes, for the readers that read them back:
+// `moon run src/examples/interop`, then `scripts/interop/read_back.py`.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonconf",
+  "moonbitstack/moonconf/dotenv",
+  "moonbitstack/moonconf/hocon",
+  "moonbitstack/moonconf/ini",
+  "moonbitstack/moonconf/props",
+}

@@ -54,6 +54,21 @@ jobs:
             fi
           done
 
+      # The vectors check that this library reads what another implementation
+      # writes. This checks the other direction: the documents it writes, read by
+      # a reader of the same format that has nothing to do with this repository.
+      - name: the documents this library writes are read by other readers
+        if: runner.os == 'Linux'
+        run: |
+          if ! command -v java > /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends default-jdk-headless
+          fi
+          python3 -m venv "$RUNNER_TEMP/interop"
+          "$RUNNER_TEMP/interop/bin/pip" install --quiet pyhocon python-dotenv
+          moon run src/examples/interop --target native > "$RUNNER_TEMP/interop/documents.txt"
+          "$RUNNER_TEMP/interop/bin/python" scripts/interop/read_back.py "$RUNNER_TEMP/interop/documents.txt"
+
       - name: lint (fmt is clean)
         run: |
           moon fmt && git diff --exit-code

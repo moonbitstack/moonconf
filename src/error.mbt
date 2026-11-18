@@ -19,7 +19,7 @@ pub(all) suberror Refused {
     got~ : String,
     path~ : String,
     source~ : String,
-    at~ : At
+    at~ : At,
   )
   /// A field the model requires was nowhere in the sources.
   Missing(path~ : String, want~ : String)
